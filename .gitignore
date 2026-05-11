@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.env.local
+.env
+
+# Playwright
+playwright-report/
+test-results/
+
+# Dev server logs
+dev-server.out
+dev-server.err

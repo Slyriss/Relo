@@ -1,0 +1,418 @@
+{
+  "organization": {
+    "id": "org-northstar",
+    "name": "Northstar Ventures",
+    "slug": "northstar",
+    "ownerId": "user-ava"
+  },
+  "event": {
+    "id": "relo-summit-2026",
+    "organizationId": "org-northstar",
+    "slug": "relo-summit-2026",
+    "title": "Relo Summit 2026",
+    "description": "A private relationship-first summit for founders, operators, investors, and GTM leaders.",
+    "venue": "The Pearl, San Francisco",
+    "startsAt": "2026-06-12T09:00:00.000Z",
+    "endsAt": "2026-06-12T18:00:00.000Z",
+    "status": "published"
+  },
+  "attendees": [
+    {
+      "id": "att-1",
+      "eventId": "relo-summit-2026",
+      "name": "Maya Patel",
+      "email": "maya@orbit.ai",
+      "company": "Orbit AI",
+      "title": "Founder & CEO",
+      "linkedinUrl": "https://linkedin.com/in/maya-patel",
+      "bio": "AI infrastructure founder raising Series A",
+      "headline": "AI infrastructure founder raising Series A",
+      "goals": [
+        "fundraising",
+        "customers"
+      ],
+      "industry": "AI",
+      "seniority": 5,
+      "profileComplete": true
+    },
+    {
+      "id": "att-2",
+      "eventId": "relo-summit-2026",
+      "name": "Jon Bell",
+      "email": "jon@forge.capital",
+      "company": "Forge Capital",
+      "title": "Partner",
+      "linkedinUrl": "https://linkedin.com/in/jon-bell",
+      "bio": "Early-stage investor focused on developer tools and AI",
+      "headline": "Early-stage investor focused on developer tools and AI",
+      "goals": [
+        "learning",
+        "partnerships"
+      ],
+      "industry": "Venture",
+      "seniority": 6,
+      "profileComplete": true
+    },
+    {
+      "id": "att-3",
+      "eventId": "relo-summit-2026",
+      "name": "Elena Ruiz",
+      "email": "elena@brightops.com",
+      "company": "BrightOps",
+      "title": "VP People",
+      "linkedinUrl": "https://linkedin.com/in/elena-ruiz",
+      "bio": "Scaling hiring systems for distributed teams",
+      "headline": "Scaling hiring systems for distributed teams",
+      "goals": [
+        "hiring",
+        "learning"
+      ],
+      "industry": "People",
+      "seniority": 4,
+      "profileComplete": true
+    },
+    {
+      "id": "att-4",
+      "eventId": "relo-summit-2026",
+      "name": "Sam Kim",
+      "email": "sam@northwind.co",
+      "company": "Northwind",
+      "title": "Head of Partnerships",
+      "linkedinUrl": "https://linkedin.com/in/sam-kim",
+      "bio": "Builds ecosystem programs for B2B SaaS",
+      "headline": "Builds ecosystem programs for B2B SaaS",
+      "goals": [
+        "partnerships",
+        "customers"
+      ],
+      "industry": "SaaS",
+      "seniority": 4,
+      "profileComplete": true
+    },
+    {
+      "id": "att-5",
+      "eventId": "relo-summit-2026",
+      "name": "Nora Stein",
+      "email": "nora@ledgerflow.com",
+      "company": "LedgerFlow",
+      "title": "CFO",
+      "linkedinUrl": "https://linkedin.com/in/nora-stein",
+      "bio": "Finance operator for usage-based software companies",
+      "headline": "Finance operator for usage-based software companies",
+      "goals": [
+        "learning",
+        "partnerships"
+      ],
+      "industry": "Fintech",
+      "seniority": 5,
+      "profileComplete": true
+    },
+    {
+      "id": "att-6",
+      "eventId": "relo-summit-2026",
+      "name": "Theo Brooks",
+      "email": "theo@kindred.dev",
+      "company": "Kindred",
+      "title": "Developer Advocate",
+      "linkedinUrl": "https://linkedin.com/in/theo-brooks",
+      "bio": "Community builder across open source data tooling",
+      "headline": "Community builder across open source data tooling",
+      "goals": [
+        "partnerships",
+        "learning"
+      ],
+      "industry": "Developer Tools",
+      "seniority": 3,
+      "profileComplete": false
+    },
+    {
+      "id": "att-7",
+      "eventId": "relo-summit-2026",
+      "name": "Iris Wang",
+      "email": "iris@apollohealth.io",
+      "company": "Apollo Health",
+      "title": "Product Lead",
+      "linkedinUrl": "https://linkedin.com/in/iris-wang",
+      "bio": "Clinical workflow product leader",
+      "headline": "Clinical workflow product leader",
+      "goals": [
+        "customers",
+        "learning"
+      ],
+      "industry": "Healthtech",
+      "seniority": 4,
+      "profileComplete": true
+    },
+    {
+      "id": "att-8",
+      "eventId": "relo-summit-2026",
+      "name": "Leo Martin",
+      "email": "leo@atlaslabs.com",
+      "company": "Atlas Labs",
+      "title": "Founder",
+      "linkedinUrl": "https://linkedin.com/in/leo-martin",
+      "bio": "Building procurement automation for mid-market teams",
+      "headline": "Building procurement automation for mid-market teams",
+      "goals": [
+        "fundraising",
+        "customers"
+      ],
+      "industry": "SaaS",
+      "seniority": 4,
+      "profileComplete": true
+    },
+    {
+      "id": "att-9",
+      "eventId": "relo-summit-2026",
+      "name": "Priya Nair",
+      "email": "priya@signal.co",
+      "company": "Signal",
+      "title": "Revenue Advisor",
+      "linkedinUrl": "https://linkedin.com/in/priya-nair",
+      "bio": "Advises founders on founder-led sales to repeatable GTM",
+      "headline": "Advises founders on founder-led sales to repeatable GTM",
+      "goals": [
+        "customers",
+        "learning"
+      ],
+      "industry": "GTM",
+      "seniority": 5,
+      "profileComplete": true
+    },
+    {
+      "id": "att-10",
+      "eventId": "relo-summit-2026",
+      "name": "Owen Clark",
+      "email": "owen@citygrid.io",
+      "company": "CityGrid",
+      "title": "COO",
+      "linkedinUrl": "https://linkedin.com/in/owen-clark",
+      "bio": "Operations leader focused on marketplace liquidity",
+      "headline": "Operations leader focused on marketplace liquidity",
+      "goals": [
+        "hiring",
+        "partnerships"
+      ],
+      "industry": "Marketplace",
+      "seniority": 5,
+      "profileComplete": true
+    },
+    {
+      "id": "att-11",
+      "eventId": "relo-summit-2026",
+      "name": "Grace Liu",
+      "email": "grace@meshdata.com",
+      "company": "Mesh Data",
+      "title": "Data Scientist",
+      "linkedinUrl": "https://linkedin.com/in/grace-liu",
+      "bio": "Applies graph learning to customer intelligence",
+      "headline": "Applies graph learning to customer intelligence",
+      "goals": [
+        "learning",
+        "hiring"
+      ],
+      "industry": "AI",
+      "seniority": 3,
+      "profileComplete": false
+    },
+    {
+      "id": "att-12",
+      "eventId": "relo-summit-2026",
+      "name": "Marcus Green",
+      "email": "marcus@rippleworks.org",
+      "company": "RippleWorks",
+      "title": "Program Director",
+      "linkedinUrl": "https://linkedin.com/in/marcus-green",
+      "bio": "Connects operators with high-impact entrepreneurs",
+      "headline": "Connects operators with high-impact entrepreneurs",
+      "goals": [
+        "partnerships",
+        "learning"
+      ],
+      "industry": "Impact",
+      "seniority": 5,
+      "profileComplete": true
+    },
+    {
+      "id": "att-13",
+      "eventId": "relo-summit-2026",
+      "name": "Zara Haddad",
+      "email": "zara@nomadpay.com",
+      "company": "NomadPay",
+      "title": "Founder",
+      "linkedinUrl": "https://linkedin.com/in/zara-haddad",
+      "bio": "Cross-border payroll founder looking for design partners",
+      "headline": "Cross-border payroll founder looking for design partners",
+      "goals": [
+        "fundraising",
+        "customers"
+      ],
+      "industry": "Fintech",
+      "seniority": 4,
+      "profileComplete": true
+    },
+    {
+      "id": "att-14",
+      "eventId": "relo-summit-2026",
+      "name": "Ben Foster",
+      "email": "ben@launchlegal.com",
+      "company": "Launch Legal",
+      "title": "Startup Counsel",
+      "linkedinUrl": "https://linkedin.com/in/ben-foster",
+      "bio": "Helps founders with financings and commercial contracts",
+      "headline": "Helps founders with financings and commercial contracts",
+      "goals": [
+        "customers",
+        "partnerships"
+      ],
+      "industry": "Legal",
+      "seniority": 5,
+      "profileComplete": true
+    },
+    {
+      "id": "att-15",
+      "eventId": "relo-summit-2026",
+      "name": "Ari Cole",
+      "email": "ari@cloudlane.dev",
+      "company": "Cloudlane",
+      "title": "Engineering Manager",
+      "linkedinUrl": "https://linkedin.com/in/ari-cole",
+      "bio": "Leads platform teams and evaluates infrastructure vendors",
+      "headline": "Leads platform teams and evaluates infrastructure vendors",
+      "goals": [
+        "hiring",
+        "customers"
+      ],
+      "industry": "Developer Tools",
+      "seniority": 4,
+      "profileComplete": true
+    },
+    {
+      "id": "att-16",
+      "eventId": "relo-summit-2026",
+      "name": "Keiko Tan",
+      "email": "keiko@sakura.vc",
+      "company": "Sakura Ventures",
+      "title": "Principal",
+      "linkedinUrl": "https://linkedin.com/in/keiko-tan",
+      "bio": "Invests in applied AI and vertical SaaS",
+      "headline": "Invests in applied AI and vertical SaaS",
+      "goals": [
+        "learning",
+        "partnerships"
+      ],
+      "industry": "Venture",
+      "seniority": 5,
+      "profileComplete": true
+    },
+    {
+      "id": "att-17",
+      "eventId": "relo-summit-2026",
+      "name": "Luis Moreno",
+      "email": "luis@cobaltlabs.io",
+      "company": "Cobalt Labs",
+      "title": "Security Lead",
+      "linkedinUrl": "https://linkedin.com/in/luis-moreno",
+      "bio": "Security buyer and advisor for fast-growing startups",
+      "headline": "Security buyer and advisor for fast-growing startups",
+      "goals": [
+        "customers",
+        "learning"
+      ],
+      "industry": "Security",
+      "seniority": 4,
+      "profileComplete": true
+    },
+    {
+      "id": "att-18",
+      "eventId": "relo-summit-2026",
+      "name": "Hannah Price",
+      "email": "hannah@fieldkit.co",
+      "company": "FieldKit",
+      "title": "Founder",
+      "linkedinUrl": "https://linkedin.com/in/hannah-price",
+      "bio": "Hardware-enabled field operations platform",
+      "headline": "Hardware-enabled field operations platform",
+      "goals": [
+        "fundraising",
+        "hiring"
+      ],
+      "industry": "Climate",
+      "seniority": 4,
+      "profileComplete": true
+    },
+    {
+      "id": "att-19",
+      "eventId": "relo-summit-2026",
+      "name": "Talia Rosen",
+      "email": "talia@northstar.vc",
+      "company": "Northstar Ventures",
+      "title": "Community Lead",
+      "linkedinUrl": "https://linkedin.com/in/talia-rosen",
+      "bio": "Designs high-trust founder communities",
+      "headline": "Designs high-trust founder communities",
+      "goals": [
+        "partnerships",
+        "learning"
+      ],
+      "industry": "Community",
+      "seniority": 4,
+      "profileComplete": true
+    },
+    {
+      "id": "att-20",
+      "eventId": "relo-summit-2026",
+      "name": "Chris Yu",
+      "email": "chris@marketbeam.com",
+      "company": "MarketBeam",
+      "title": "Growth Lead",
+      "linkedinUrl": "https://linkedin.com/in/chris-yu",
+      "bio": "Runs lifecycle and PLG experiments for B2B products",
+      "headline": "Runs lifecycle and PLG experiments for B2B products",
+      "goals": [
+        "customers",
+        "hiring"
+      ],
+      "industry": "GTM",
+      "seniority": 4,
+      "profileComplete": true
+    }
+  ],
+  "meetings": [
+    {
+      "id": "meet-1",
+      "eventId": "relo-summit-2026",
+      "attendeeAId": "att-1",
+      "attendeeBId": "att-2",
+      "note": "Maya is raising in Q3. Jon asked for a deeper infra metrics deck.",
+      "createdAt": "2026-06-12T17:15:00.000Z",
+      "synced": true
+    },
+    {
+      "id": "meet-2",
+      "eventId": "relo-summit-2026",
+      "attendeeAId": "att-8",
+      "attendeeBId": "att-9",
+      "note": "Priya offered to introduce Leo to three procurement design partners.",
+      "createdAt": "2026-06-12T18:05:00.000Z",
+      "synced": true
+    },
+    {
+      "id": "meet-3",
+      "eventId": "relo-summit-2026",
+      "attendeeAId": "att-13",
+      "attendeeBId": "att-14",
+      "note": "Zara needs help reviewing payroll compliance templates.",
+      "createdAt": "2026-06-12T19:10:00.000Z",
+      "synced": true
+    }
+  ],
+  "analytics": {
+    "attendeesInvited": 20,
+    "profilesCompleted": 18,
+    "meetingsLogged": 3,
+    "activeUsersLive": 8,
+    "followupRate": 42,
+    "engagementScore": 84
+  }
+}
