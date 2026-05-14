@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { aiProvider } from "@/lib/ai/provider";
+import { followupInputSchema } from "@/lib/ai/schemas";
 import type { FollowupInput } from "@/lib/ai/provider";
 
 export async function POST(request: Request) {
@@ -10,10 +11,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (!body.meeting || !body.sender || !body.recipient) {
+  const parsed = followupInputSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json({ error: "meeting, sender, and recipient are required" }, { status: 400 });
   }
 
-  const draft = await aiProvider.generateFollowup(body);
+  const draft = await aiProvider.generateFollowup(parsed.data);
   return NextResponse.json({ draft });
 }

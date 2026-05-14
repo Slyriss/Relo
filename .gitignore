@@ -8,5 +8,10 @@ playwright-report/
 test-results/
 
 # Dev server logs
-dev-server.out
-dev-server.err
+*.out
+*.err
+
+# Local tooling artifacts
+.claude/
+.visual-qa/
+tsconfig.tsbuildinfo

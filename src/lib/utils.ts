@@ -8,13 +8,17 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDateRange(start: string, end: string) {
   const startDate = new Date(start);
   const endDate = new Date(end);
-  return `${startDate.toLocaleDateString(undefined, {
+  const date = new Intl.DateTimeFormat("en-US", {
     month: "short",
-    day: "numeric"
-  })}, ${startDate.toLocaleTimeString(undefined, {
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(startDate);
+  const time = new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
-    minute: "2-digit"
-  })} - ${endDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
+  return `${date}, ${time.format(startDate)} - ${time.format(endDate)}`;
 }
 
 export function slugify(value: string) {

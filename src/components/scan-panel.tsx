@@ -1,11 +1,10 @@
 "use client";
 
-import { Check, QrCode, Sparkles } from "lucide-react";
+import { CalendarPlus, QrCode, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { MeetingCaptureForm } from "@/components/meeting-capture-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { useShallow } from "zustand/react/shallow";
 import { queueMeeting, syncQueuedMeetings } from "@/lib/offline/meeting-queue";
 import { useAppStore } from "@/lib/store";
@@ -16,10 +15,22 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
   const logMeeting = useAppStore((state) => state.logMeeting);
   const current = attendees[0];
   const [targetId, setTargetId] = useState(scannedAttendeeId ?? attendees[1]?.id ?? "");
-  const [note, setNote] = useState("");
   const [status, setStatus] = useState("");
   const [draft, setDraft] = useState("");
   const [draftLoading, setDraftLoading] = useState(false);
+
+  function buildCalendarUrl(recipientName: string, body: string) {
+    const start = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    start.setHours(10, 0, 0, 0);
+    const end = new Date(start.getTime() + 30 * 60 * 1000);
+    const fmt = (d: Date) => d.toISOString().replace(/[-:.]/g, "").slice(0, 15) + "Z";
+    return (
+      `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+      `&text=${encodeURIComponent(`Follow-up with ${recipientName}`)}` +
+      `&dates=${fmt(start)}/${fmt(end)}` +
+      `&details=${encodeURIComponent(body)}`
+    );
+  }
   const target = useMemo(() => attendees.find((attendee) => attendee.id === targetId), [attendees, targetId]);
 
   useEffect(() => {
@@ -31,17 +42,8 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
     return () => window.removeEventListener("online", sync);
   }, [logMeeting]);
 
-  async function save() {
+  async function save(meeting: Meeting) {
     if (!current || !target) return;
-    const meeting: Meeting = {
-      id: crypto.randomUUID(),
-      eventId,
-      attendeeAId: current.id,
-      attendeeBId: target.id,
-      note,
-      createdAt: new Date().toISOString(),
-      synced: navigator.onLine
-    };
 
     if (navigator.onLine) {
       logMeeting(meeting);
@@ -60,7 +62,6 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
       await queueMeeting(meeting);
       setStatus("Saved offline. Relo will sync when connection returns.");
     }
-    setNote("");
   }
 
   return (
@@ -93,11 +94,9 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
             </div>
           </div>
         ) : null}
-        <Textarea placeholder="Quick note, next step, or intro promised" value={note} onChange={(event) => setNote(event.target.value)} />
-        <Button onClick={save}>
-          <Check className="h-4 w-4" />
-          Confirm meeting
-        </Button>
+        {current && target ? (
+          <MeetingCaptureForm eventId={eventId} current={current} target={target} onSave={save} />
+        ) : null}
         {status ? <p className="text-sm text-muted-foreground">{status}</p> : null}
         {draftLoading ? (
           <div className="space-y-2">
@@ -112,6 +111,17 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
               Suggested follow-up
             </div>
             <p className="text-muted-foreground">{draft}</p>
+            {target ? (
+              <a
+                href={buildCalendarUrl(target.name, draft)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20"
+              >
+                <CalendarPlus className="h-3.5 w-3.5" />
+                Schedule 30-min follow-up
+              </a>
+            ) : null}
           </div>
         ) : null}
       </CardContent>

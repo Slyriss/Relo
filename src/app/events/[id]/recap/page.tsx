@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Copy, Mail, Bell, CheckCircle2 } from "lucide-react";
+import { CalendarClock, Copy, Mail, Bell, CheckCircle2 } from "lucide-react";
 import { ExportActions } from "@/components/export-actions";
 import { FollowupStatusBadge } from "@/components/followup-status-badge";
 import { mockFollowup } from "@/lib/ai/followup";
@@ -19,6 +19,8 @@ export default function RecapPage({ params }: { params: { id: string } }) {
   const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === params.id)));
   const sender = attendees[0];
   const [overrides, setOverrides] = useState<Record<string, "drafted" | "copied" | "sent" | "reminded">>({});
+  const committedMeetings = meetings.filter((meeting) => meeting.promisedAction || meeting.dueDate);
+  const permissionCount = meetings.filter((meeting) => meeting.permissionToContact).length;
   const csv = useMemo(
     () => (event ? buildRecapCsv(event, attendees, meetings) : ""),
     [attendees, event, meetings]
@@ -35,8 +37,8 @@ export default function RecapPage({ params }: { params: { id: string } }) {
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="People met" value={meetings.length} />
-        <StatCard label="Follow-ups ready" value={meetings.length} />
-        <StatCard label="Engagement score" value={84} />
+        <StatCard label="Follow-ups due" value={committedMeetings.length} />
+        <StatCard label="Permission captured" value={permissionCount} />
       </div>
       <div className="grid gap-4">
         {meetings.map((meeting, index) => {
@@ -53,7 +55,34 @@ export default function RecapPage({ params }: { params: { id: string } }) {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">{meeting.note}</p>
+                <div className="grid gap-2 rounded-xl border bg-background p-3 text-sm sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Topic</p>
+                    <p>{meeting.topic || meeting.note}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Promised action</p>
+                    <p>{meeting.promisedAction || "No explicit action captured yet"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Owner</p>
+                    <p className="capitalize">{meeting.owner || "me"}</p>
+                  </div>
+                  <div>
+                    <p className="flex items-center gap-1 text-xs font-semibold uppercase text-muted-foreground">
+                      <CalendarClock className="h-3.5 w-3.5" />
+                      Due / channel
+                    </p>
+                    <p>
+                      {meeting.dueDate || "No date"} · {meeting.followupChannel || "email"}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {meeting.permissionToContact === false
+                    ? "No permission captured. Treat this as internal notes only."
+                    : "Permission to follow up captured."}
+                </p>
                 <div className="rounded-xl bg-muted p-4 text-sm">{draft}</div>
                 <div className="flex flex-wrap gap-2 print:hidden">
                   <Button

@@ -1,4 +1,4 @@
-import { test as base } from "@playwright/test";
+import { test as base, type Page } from "@playwright/test";
 
 /**
  * Extends the base Playwright test with an `authedPage` fixture that injects
@@ -6,7 +6,7 @@ import { test as base } from "@playwright/test";
  * routes (/dashboard, /settings, /org) without a real Supabase connection.
  */
 export const test = base.extend<{ authedPage: typeof base.prototype.page }>({
-  authedPage: async ({ page }, use) => {
+  authedPage: async ({ page }: { page: Page }, use: (p: Page) => Promise<void>) => {
     await page.context().addCookies([
       {
         name: "sb-access-token",

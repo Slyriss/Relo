@@ -7,14 +7,22 @@ import { formatDateRange } from "@/lib/utils";
 import type { Event } from "@/types";
 
 export function EventCard({ event }: { event: Event }) {
+  const isPast = new Date(event.endsAt) < new Date();
+
   return (
-    <Card className="overflow-hidden">
+    <Card className={isPast ? "opacity-80" : ""}>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <CardTitle className="text-lg">{event.title}</CardTitle>
-          <Badge className={event.status === "published" ? "border-primary/30 text-primary" : ""}>
-            {event.status}
-          </Badge>
+          <div className="flex shrink-0 gap-1.5">
+            {isPast ? (
+              <Badge className="text-muted-foreground">Past</Badge>
+            ) : (
+              <Badge className={event.status === "published" ? "border-primary/30 text-primary" : ""}>
+                {event.status}
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -30,11 +38,13 @@ export function EventCard({ event }: { event: Event }) {
           </span>
         </div>
         <div className="flex gap-2">
-          <Button asChild size="sm">
-            <Link href={`/dashboard/events/${event.id}`}>Manage</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/events/${event.id}`}>Attendee view</Link>
+          {!isPast ? (
+            <Button asChild size="sm">
+              <Link href={`/dashboard/events/${event.id}`}>Manage</Link>
+            </Button>
+          ) : null}
+          <Button asChild size="sm" variant={isPast ? "default" : "outline"}>
+            <Link href={`/events/${event.id}`}>{isPast ? "View recap" : "Attendee view"}</Link>
           </Button>
         </div>
       </CardContent>

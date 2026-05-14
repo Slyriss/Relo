@@ -7,6 +7,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   test: {
     environment: "jsdom",
+    exclude: ["e2e/**", "node_modules/**", ".next/**"],
     globals: true,
     root
   },

@@ -1,3 +1,4 @@
+import { EventNavbar } from "@/components/event-navbar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 export default function EventLayout({
@@ -9,6 +10,7 @@ export default function EventLayout({
 }) {
   return (
     <>
+      <EventNavbar eventId={params.id} />
       {children}
       <MobileBottomNav eventId={params.id} />
     </>

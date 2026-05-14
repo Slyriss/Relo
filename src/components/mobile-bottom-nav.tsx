@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 export function MobileBottomNav({ eventId }: { eventId: string }) {
   const pathname = usePathname();
   const items = [
-    { href: `/events/${eventId}`, label: "Home", icon: CalendarDays },
-    { href: `/events/${eventId}/people`, label: "People", icon: Users },
+    { href: `/events/${eventId}`,         label: "Home",    icon: CalendarDays },
+    { href: `/events/${eventId}/people`,  label: "People",  icon: Users },
     { href: `/events/${eventId}/matches`, label: "Matches", icon: Sparkles },
-    { href: `/events/${eventId}/scan`, label: "Scan", icon: QrCode }
+    { href: `/events/${eventId}/scan`,    label: "Scan",    icon: QrCode }
   ];
 
   return (
@@ -22,7 +22,7 @@ export function MobileBottomNav({ eventId }: { eventId: string }) {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-xs text-muted-foreground",
+              "flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-xs text-muted-foreground",
               pathname === item.href && "bg-muted text-foreground"
             )}
           >

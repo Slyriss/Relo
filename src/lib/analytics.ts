@@ -1,5 +1,5 @@
 import { scoreMatches } from "@/lib/ai/matching";
-import type { Attendee, Meeting } from "@/types";
+import type { Attendee, Event, Meeting } from "@/types";
 
 export function getConnectorStats(attendees: Attendee[], meetings: Meeting[]) {
   return attendees
@@ -36,4 +36,37 @@ export function getOrganizerIntroRecommendations(attendees: Attendee[], limit = 
 
 export function getFollowupStatus(index: number): "drafted" | "copied" | "sent" | "reminded" {
   return ["drafted", "copied", "sent", "reminded"][index % 4] as "drafted" | "copied" | "sent" | "reminded";
+}
+
+// Events where both viewer and target attended, ordered most-recent first.
+// Cross-event identity is determined by email address.
+export function getSharedEventHistory(
+  viewerEmail: string,
+  targetEmail: string,
+  attendees: Attendee[],
+  events: Event[],
+  meetings: Meeting[]
+): Array<{ event: Event; metAtEvent: boolean }> {
+  const viewerEventIds = new Set(attendees.filter((a) => a.email === viewerEmail).map((a) => a.eventId));
+  const targetByEvent = new Map(attendees.filter((a) => a.email === targetEmail).map((a) => [a.eventId, a]));
+
+  const result: Array<{ event: Event; metAtEvent: boolean }> = [];
+
+  for (const [eventId, targetRecord] of targetByEvent) {
+    if (!viewerEventIds.has(eventId)) continue;
+    const event = events.find((e) => e.id === eventId);
+    if (!event) continue;
+    const viewerRecord = attendees.find((a) => a.email === viewerEmail && a.eventId === eventId);
+    const metAtEvent = viewerRecord
+      ? meetings.some(
+          (m) =>
+            m.eventId === eventId &&
+            ((m.attendeeAId === viewerRecord.id && m.attendeeBId === targetRecord.id) ||
+              (m.attendeeAId === targetRecord.id && m.attendeeBId === viewerRecord.id))
+        )
+      : false;
+    result.push({ event, metAtEvent });
+  }
+
+  return result.sort((a, b) => new Date(b.event.startsAt).getTime() - new Date(a.event.startsAt).getTime());
 }

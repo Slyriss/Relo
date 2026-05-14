@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles, UserRoundX } from "lucide-react";
+import { ArrowRight, Bookmark, CheckCircle2, Network, Sparkles, UserRoundX } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CsvUploadDropzone } from "@/components/csv-upload-dropzone";
+import { ProfilePasteImport } from "@/components/profile-paste-import";
 import { ExportActions } from "@/components/export-actions";
 import { QrBadgeCard } from "@/components/qr-badge-card";
 import { StatCard } from "@/components/stat-card";
@@ -19,6 +20,10 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const event = useEvent(params.id);
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === params.id)));
   const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === params.id)));
+  const meetingRequests = useAppStore(useShallow((s) => s.meetingRequests.filter((r) => r.eventId === params.id)));
+  const checkIns = useAppStore(useShallow((s) => s.checkIns.filter((c) => c.eventId === params.id)));
+  const facilitateMeetingRequest = useAppStore((s) => s.facilitateMeetingRequest);
+  const removeMeetingRequest = useAppStore((s) => s.removeMeetingRequest);
 
   if (!event) return <div>Event not found.</div>;
 
@@ -45,6 +50,12 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         <div className="flex flex-wrap gap-2">
           <ExportActions csv={sponsorCsv} filename={`${event.slug}-sponsor-report.csv`} pdfLabel="Sponsor PDF" />
           <Button asChild variant="outline">
+            <Link href={`/events/${event.id}/graph`}>
+              <Network className="h-4 w-4" />
+              Connections
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href={`/events/${event.id}`}>Open attendee view</Link>
           </Button>
         </div>
@@ -53,9 +64,64 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         <StatCard label="Attendees invited" value={attendees.length} />
         <StatCard label="Profiles completed" value={completed} />
         <StatCard label="Meetings logged" value={meetings.length} />
-        <StatCard label="Active live" value={8} />
-        <StatCard label="Follow-up rate" value={`${followupRate}%`} />
+        <StatCard label="Here now" value={checkIns.length} />
+        <StatCard label="Intro requests" value={meetingRequests.filter(r => r.status === "pending").length} />
       </div>
+
+      {/* Meeting requests */}
+      {meetingRequests.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bookmark className="h-4 w-4 text-amber-500" />
+              Pre-event intro requests
+              <Badge className="ml-1 bg-amber-50 text-amber-700">
+                {meetingRequests.filter(r => r.status === "pending").length} pending
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {meetingRequests.map((req) => {
+              const requester = attendees.find((a) => a.id === req.requesterId);
+              const target    = attendees.find((a) => a.id === req.targetId);
+              if (!requester || !target) return null;
+              return (
+                <div key={req.id} className="flex items-center gap-3 rounded-xl border bg-background px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">
+                      {requester.name}
+                      <span className="mx-1.5 text-muted-foreground">wants to meet</span>
+                      {target.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{requester.company} · {target.company}</p>
+                    {req.note && <p className="mt-1 text-xs text-muted-foreground italic">&ldquo;{req.note}&rdquo;</p>}
+                  </div>
+                  {req.status === "facilitated" ? (
+                    <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-emerald-600">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Facilitated
+                    </span>
+                  ) : (
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        onClick={() => facilitateMeetingRequest(req.id)}
+                        className="rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                      >
+                        Facilitate
+                      </button>
+                      <button
+                        onClick={() => removeMeetingRequest(req.id)}
+                        className="rounded-lg border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
@@ -152,6 +218,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           </CardContent>
         </Card>
         <CsvUploadDropzone eventId={event.id} />
+        <ProfilePasteImport eventId={event.id} />
       </div>
       <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
         {attendees[0] ? <QrBadgeCard attendee={attendees[0]} /> : null}

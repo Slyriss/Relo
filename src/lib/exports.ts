@@ -4,7 +4,21 @@ import type { Attendee, Event, Meeting } from "@/types";
 
 export function buildRecapCsv(event: Event, attendees: Attendee[], meetings: Meeting[]) {
   const rows = [
-    ["event", "person_met", "company", "title", "note", "followup_status", "followup_draft"],
+    [
+      "event",
+      "person_met",
+      "company",
+      "title",
+      "topic",
+      "promised_action",
+      "owner",
+      "due_date",
+      "followup_channel",
+      "permission_to_contact",
+      "note",
+      "followup_status",
+      "followup_draft",
+    ],
     ...meetings.map((meeting, index) => {
       const sender = attendees.find((attendee) => attendee.id === meeting.attendeeAId) ?? attendees[0];
       const recipient = attendees.find((attendee) => attendee.id === meeting.attendeeBId) ?? attendees[1];
@@ -13,6 +27,12 @@ export function buildRecapCsv(event: Event, attendees: Attendee[], meetings: Mee
         recipient?.name ?? "Unknown",
         recipient?.company ?? "",
         recipient?.title ?? "",
+        meeting.topic ?? "",
+        meeting.promisedAction ?? "",
+        meeting.owner ?? "",
+        meeting.dueDate ?? "",
+        meeting.followupChannel ?? "",
+        meeting.permissionToContact === undefined ? "" : String(meeting.permissionToContact),
         meeting.note,
         getFollowupStatus(index),
         sender && recipient ? mockFollowup({ meeting, sender, recipient }) : ""

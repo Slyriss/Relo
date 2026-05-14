@@ -87,7 +87,7 @@ function parseCsvRows(csv: string) {
   return rows.filter((items) => items.some(Boolean));
 }
 
-function inferGoals(text: string, title: string): Attendee["goals"] {
+export function inferGoals(text: string, title: string): Attendee["goals"] {
   const source = `${text} ${title}`.toLowerCase();
   const goals: Attendee["goals"] = [];
   if (/\b(rais|raising|fundrais|fund\b|invest(?:or|ing|ment)\b|capital|series [abcd]|\bvc\b)/.test(source)) goals.push("fundraising");
@@ -98,7 +98,7 @@ function inferGoals(text: string, title: string): Attendee["goals"] {
   return goals;
 }
 
-function inferSeniority(title: string) {
+export function inferSeniority(title: string) {
   const value = title.toLowerCase();
   if (/founder|ceo|cfo|coo|partner/.test(value)) return 5;
   if (/vp|head|principal/.test(value)) return 4;
@@ -106,7 +106,7 @@ function inferSeniority(title: string) {
   return 2;
 }
 
-function inferIndustry(company: string, bio: string) {
+export function inferIndustry(company: string, bio: string) {
   const source = `${company} ${bio}`.toLowerCase();
   if (/\b(ai\b|artificial intelligence|machine learning|\bml\b|llm|deep learning)/.test(source)) return "AI";
   if (/\b(fintech|financi|payment|payroll|ledger|banking|wealth)/.test(source)) return "Fintech";
