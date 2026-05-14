@@ -10,7 +10,7 @@ import { StatCard } from "@/components/stat-card";
 import { EventSwitcher } from "@/components/event-switcher";
 import { Button } from "@/components/ui/button";
 import { useShallow } from "zustand/react/shallow";
-import { useAppStore, useEvent, useRecommendations } from "@/lib/store";
+import { useAppStore, useCurrentEventAttendee, useEvent, useRecommendations } from "@/lib/store";
 import { GOAL_COLOR } from "@/lib/graph";
 import { cn } from "@/lib/utils";
 
@@ -20,14 +20,15 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
   const eventId = event?.id ?? id;
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
   const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === eventId)));
-  const allRecommendations = useRecommendations(eventId);
+  const viewer = useCurrentEventAttendee(eventId);
+  const viewerId = viewer?.id;
+  const allRecommendations = useRecommendations(eventId, viewerId);
   const checkIns = useAppStore(useShallow((s) => s.checkIns.filter((c) => c.eventId === eventId)));
   const recommendationActions = useAppStore(useShallow((s) => s.recommendationActions.filter((a) => a.eventId === eventId)));
   const toggleCheckIn = useAppStore((s) => s.toggleCheckIn);
   const markRecommendationAction = useAppStore((s) => s.markRecommendationAction);
   const logMeeting = useAppStore((s) => s.logMeeting);
 
-  const viewerId   = attendees[0]?.id;
   const iCheckedIn = checkIns.some((c) => c.attendeeId === viewerId);
   const checkedInIds = new Set(checkIns.map((c) => c.attendeeId));
   const actionByTarget = new Map(recommendationActions.map((action) => [action.targetId, action]));
@@ -79,7 +80,7 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
       {event && viewerId && nextBest && nextBestAttendee ? (
         <NextBestPerson
           event={event}
-          viewer={attendees.find((attendee) => attendee.id === viewerId) ?? attendees[0]}
+          viewer={viewer}
           target={nextBestAttendee}
           match={nextBest}
           checkIns={checkIns}
@@ -161,7 +162,7 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
               key={match.targetId}
               attendee={attendee}
               match={match}
-              source={attendees.find((item) => item.id === viewerId)}
+              source={viewer}
               viewerId={viewerId}
               eventId={eventId}
             />

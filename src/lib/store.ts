@@ -286,10 +286,21 @@ export function useEventAttendees(eventId: string) {
   return useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
 }
 
-export function useRecommendations(eventId: string, attendeeId = "att-1") {
+export function useCurrentEventAttendee(eventId: string) {
+  return useAppStore((state) => {
+    const eventAttendees = state.attendees.filter((attendee) => attendee.eventId === eventId);
+    const userEmail = state.user?.email.toLowerCase();
+    return userEmail
+      ? eventAttendees.find((attendee) => attendee.email.toLowerCase() === userEmail)
+      : undefined;
+  });
+}
+
+export function useRecommendations(eventId: string, attendeeId?: string) {
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((a) => a.eventId === eventId)));
   return useMemo(() => {
-    const source = attendees.find((a) => a.id === attendeeId) ?? attendees[0];
+    if (!attendeeId) return [];
+    const source = attendeeId ? attendees.find((a) => a.id === attendeeId) : attendees[0];
     return source ? scoreMatches(source, attendees) : [];
   }, [attendees, attendeeId]);
 }

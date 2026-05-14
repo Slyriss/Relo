@@ -51,6 +51,7 @@ const VISIBILITY_FIELDS: { key: VisibilityKey; label: string; desc: string }[] =
 export default function SetupPage() {
   const router = useRouter();
   const user = useAppStore((state) => state.user);
+  const events = useAppStore((state) => state.events);
   const updateUser = useAppStore((state) => state.updateUser);
   const setVisibility = useAppStore((state) => state.setVisibility);
 
@@ -58,7 +59,7 @@ export default function SetupPage() {
 
   // Step 0 state
   const [name, setName] = useState(user?.name ?? "");
-  const [role, setRole] = useState<"attendee" | "organizer">("attendee");
+  const [role, setRole] = useState<"attendee" | "organizer">(user?.role === "organizer" ? "organizer" : "attendee");
 
   // Step 1 state
   const [linkedinUrl, setLinkedinUrl] = useState("");
@@ -113,6 +114,12 @@ export default function SetupPage() {
   }
 
   function handleComplete() {
+    if (role === "attendee") {
+      const event = events[0];
+      router.push(event ? `/events/${event.id || event.slug}` : "/login");
+      return;
+    }
+
     router.push("/dashboard/events");
   }
 

@@ -7,7 +7,7 @@ import { TopRecommendedPeople } from "@/components/enrichment";
 import { MatchCard } from "@/components/match-card";
 import { Button } from "@/components/ui/button";
 import { rankEnrichedRecommendations } from "@/lib/enrichment";
-import { useAppStore, useEvent, useRecommendations } from "@/lib/store";
+import { useAppStore, useCurrentEventAttendee, useEvent, useRecommendations } from "@/lib/store";
 
 const INITIAL_COUNT = 8;
 const BATCH_SIZE = 6;
@@ -17,9 +17,9 @@ export default function MatchesPage({ params }: { params: Promise<{ id: string }
   const event = useEvent(id);
   const eventId = event?.id ?? id;
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
-  const allRecs = useRecommendations(eventId);
+  const source = useCurrentEventAttendee(eventId);
+  const allRecs = useRecommendations(eventId, source?.id);
   const checkIns = useAppStore(useShallow((state) => state.checkIns.filter((checkIn) => checkIn.eventId === eventId)));
-  const source = attendees[0];
   const checkedInIds = new Set(checkIns.map((checkIn) => checkIn.attendeeId));
   const roomRecs = [...allRecs].sort((a, b) => {
     const hereDelta = Number(checkedInIds.has(b.targetId)) - Number(checkedInIds.has(a.targetId));

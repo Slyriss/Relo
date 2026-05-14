@@ -8,7 +8,7 @@ import { mockFollowup } from "@/lib/ai/followup";
 import { buildRecapCsv } from "@/lib/exports";
 import { getFollowupStatus } from "@/lib/analytics";
 import { useShallow } from "zustand/react/shallow";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, useCurrentEventAttendee } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/stat-card";
@@ -19,13 +19,20 @@ export default function RecapPage({ params }: { params: Promise<{ id: string }> 
   const eventId = event?.id ?? id;
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
   const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === eventId)));
-  const sender = attendees[0];
+  const sender = useCurrentEventAttendee(eventId);
   const [overrides, setOverrides] = useState<Record<string, "drafted" | "copied" | "sent" | "reminded">>({});
-  const committedMeetings = meetings.filter((meeting) => meeting.promisedAction || meeting.dueDate);
-  const permissionCount = meetings.filter((meeting) => meeting.permissionToContact).length;
+  const visibleMeetings = useMemo(
+    () =>
+      sender
+        ? meetings.filter((meeting) => meeting.attendeeAId === sender.id || meeting.attendeeBId === sender.id)
+        : [],
+    [meetings, sender]
+  );
+  const committedMeetings = visibleMeetings.filter((meeting) => meeting.promisedAction || meeting.dueDate);
+  const permissionCount = visibleMeetings.filter((meeting) => meeting.permissionToContact).length;
   const csv = useMemo(
-    () => (event ? buildRecapCsv(event, attendees, meetings) : ""),
-    [attendees, event, meetings]
+    () => (event ? buildRecapCsv(event, attendees, visibleMeetings) : ""),
+    [attendees, event, visibleMeetings]
   );
 
   return (
@@ -38,13 +45,14 @@ export default function RecapPage({ params }: { params: Promise<{ id: string }> 
         {event ? <ExportActions csv={csv} filename={`${event.slug}-attendee-recap.csv`} pdfLabel="Recap PDF" /> : null}
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="People met" value={meetings.length} />
+        <StatCard label="People met" value={visibleMeetings.length} />
         <StatCard label="Follow-ups due" value={committedMeetings.length} />
         <StatCard label="Permission captured" value={permissionCount} />
       </div>
       <div className="grid gap-4">
-        {meetings.map((meeting, index) => {
-          const recipient = attendees.find((attendee) => attendee.id === meeting.attendeeBId) ?? attendees[1];
+        {visibleMeetings.map((meeting, index) => {
+          const recipientId = meeting.attendeeAId === sender?.id ? meeting.attendeeBId : meeting.attendeeAId;
+          const recipient = attendees.find((attendee) => attendee.id === recipientId);
           if (!sender || !recipient) return null;
           const status = overrides[meeting.id] ?? getFollowupStatus(index);
           const draft = mockFollowup({ meeting, sender, recipient });

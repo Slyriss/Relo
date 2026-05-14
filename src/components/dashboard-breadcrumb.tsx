@@ -37,7 +37,7 @@ function useCrumbs(): Crumb[] {
 
   // /dashboard/contacts
   if (pathname === "/dashboard/contacts") {
-    return [{ label: "My Network" }];
+    return [{ label: "CRM Network" }];
   }
 
   // /dashboard/organization

@@ -10,9 +10,6 @@ import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { GOAL_COLOR } from "@/lib/graph";
 
-// Viewer is always Maya (att-1 / maya@orbit.ai) in demo
-const VIEWER_EMAIL = "maya@orbit.ai";
-
 type Strength = "strong" | "regular" | "new";
 
 type Contact = {
@@ -52,36 +49,25 @@ export default function ContactsPage() {
   const [filter, setFilter] = useState<Strength | "all">("all");
 
   const contacts = useMemo<Contact[]>(() => {
-    // All attendee records for the viewer
-    const viewerRecords = allAttendees.filter((a) => a.email === VIEWER_EMAIL);
-    const viewerIdSet   = new Set(viewerRecords.map((a) => a.id));
-
-    // Meetings the viewer was in
-    const viewerMeetings = allMeetings.filter(
-      (m) => viewerIdSet.has(m.attendeeAId) || viewerIdSet.has(m.attendeeBId)
-    );
-
-    // Group by the other person's email
     const byEmail = new Map<string, { meetings: typeof allMeetings; attendees: typeof allAttendees }>();
 
-    for (const m of viewerMeetings) {
-      const otherId = viewerIdSet.has(m.attendeeAId) ? m.attendeeBId : m.attendeeAId;
-      const other   = allAttendees.find((a) => a.id === otherId);
-      if (!other) continue;
-      const key = other.email;
-      if (!byEmail.has(key)) byEmail.set(key, { meetings: [], attendees: [] });
-      byEmail.get(key)!.meetings.push(m);
-      if (!byEmail.get(key)!.attendees.some((a) => a.id === other.id)) {
-        byEmail.get(key)!.attendees.push(other);
-      }
+    for (const attendee of allAttendees) {
+      if (!byEmail.has(attendee.email)) byEmail.set(attendee.email, { meetings: [], attendees: [] });
+      byEmail.get(attendee.email)!.attendees.push(attendee);
+    }
+
+    for (const entry of byEmail.values()) {
+      const ids = new Set(entry.attendees.map((attendee) => attendee.id));
+      entry.meetings = allMeetings.filter((meeting) => ids.has(meeting.attendeeAId) || ids.has(meeting.attendeeBId));
     }
 
     return Array.from(byEmail.entries()).map(([email, { meetings, attendees }]) => {
       const latest    = meetings.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       const lastMeeting = latest[0];
-      const lastEvent = allEvents.find((e) => e.id === lastMeeting.eventId);
       const rep       = attendees[0]; // most recent record
-      const eventIds  = new Set(meetings.map((m) => m.eventId));
+      const lastEvent = lastMeeting ? allEvents.find((e) => e.id === lastMeeting.eventId) : undefined;
+      const attendedEvent = allEvents.find((e) => e.id === rep.eventId);
+      const eventIds  = new Set([...meetings.map((m) => m.eventId), ...attendees.map((a) => a.eventId)]);
 
       return {
         email,
@@ -93,9 +79,9 @@ export default function ContactsPage() {
         goals:      rep.goals,
         meetingCount: meetings.length,
         eventsTogether: eventIds.size,
-        lastMetAt:  lastMeeting.createdAt,
-        lastEventTitle: lastEvent?.title ?? "Unknown event",
-        latestNote: lastMeeting.note,
+        lastMetAt:  lastMeeting?.createdAt ?? attendedEvent?.startsAt ?? new Date(0).toISOString(),
+        lastEventTitle: lastEvent?.title ?? attendedEvent?.title ?? "No meetings logged",
+        latestNote: lastMeeting?.note ?? "",
         strength:   strength(meetings.length),
       };
     }).sort((a, b) => b.meetingCount - a.meetingCount || b.lastMetAt.localeCompare(a.lastMetAt));
@@ -116,9 +102,9 @@ export default function ContactsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-normal">My Network</h1>
+        <h1 className="text-3xl font-semibold tracking-normal">CRM Network</h1>
         <p className="mt-1 text-muted-foreground">
-          Everyone you&apos;ve met across all events — with context, history, and follow-up status.
+          Attendee relationship history across all events, with context and follow-up status.
         </p>
       </div>
 
@@ -203,7 +189,7 @@ export default function ContactsPage() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" />
-                        Last met {relativeDate} · {c.lastEventTitle}
+                        {c.meetingCount > 0 ? "Last met" : "Seen"} {relativeDate} · {c.lastEventTitle}
                       </span>
                     </div>
 

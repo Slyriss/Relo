@@ -41,10 +41,10 @@ export function MatchCard({ attendee, match, source, eventId, viewerId, feedback
   const addMeetingRequest = useAppStore((s) => s.addMeetingRequest);
   const removeMeetingRequest = useAppStore((s) => s.removeMeetingRequest);
   const checkIns          = useAppStore(useShallow((s) => s.checkIns));
-  const activeViewerId = viewerId ?? source?.id ?? "att-1";
+  const activeViewerId = viewerId ?? source?.id;
 
   const existingRequest = meetingRequests.find(
-    (r) => r.requesterId === activeViewerId && r.targetId === attendee.id && r.eventId === (eventId ?? attendee.eventId)
+    (r) => !!activeViewerId && r.requesterId === activeViewerId && r.targetId === attendee.id && r.eventId === (eventId ?? attendee.eventId)
   );
   const isConnected = !!existingRequest;
   const isHere = checkIns.some((c) => c.attendeeId === attendee.id && c.eventId === (eventId ?? attendee.eventId));
@@ -53,6 +53,7 @@ export function MatchCard({ attendee, match, source, eventId, viewerId, feedback
     : null;
 
   function toggleConnect() {
+    if (!activeViewerId || activeViewerId === attendee.id) return;
     if (isConnected && existingRequest) {
       removeMeetingRequest(existingRequest.id);
     } else {
@@ -154,11 +155,14 @@ export function MatchCard({ attendee, match, source, eventId, viewerId, feedback
             <div className="flex shrink-0 items-center gap-1.5">
               <button
                 onClick={toggleConnect}
+                disabled={!activeViewerId || activeViewerId === attendee.id}
                 title={isConnected ? "Remove from my list" : "I want to meet this person"}
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-lg transition",
                   isConnected
                     ? "bg-primary/10 text-primary hover:bg-primary/20"
+                    : !activeViewerId || activeViewerId === attendee.id
+                      ? "text-muted-foreground/50"
                     : "text-muted-foreground hover:bg-muted hover:text-primary"
                 )}
               >

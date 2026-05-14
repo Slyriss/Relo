@@ -8,10 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import { useAppStore, useEvent } from "@/lib/store";
+import { useAppStore, useCurrentEventAttendee, useEvent } from "@/lib/store";
 import type { Goal } from "@/types";
-
-const VIEWER_ID = "att-1";
 
 type Tab = "browse" | "pokes" | "mylist";
 
@@ -20,6 +18,8 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
   const event = useEvent(id);
   const eventId = event?.id ?? id;
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
+  const viewer = useCurrentEventAttendee(eventId);
+  const viewerId = viewer?.id;
   const meetingRequests = useAppStore(useShallow((s) => s.meetingRequests.filter((r) => r.eventId === eventId)));
   const addMeetingRequest = useAppStore((s) => s.addMeetingRequest);
   const removeMeetingRequest = useAppStore((s) => s.removeMeetingRequest);
@@ -44,25 +44,29 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
 
   // Incoming pokes: others → viewer
   const incomingPokes = useMemo(
-    () => meetingRequests.filter((r) => r.targetId === VIEWER_ID && r.status === "pending" && !dismissedPokes.has(r.id)),
-    [meetingRequests, dismissedPokes]
+    () =>
+      viewerId
+        ? meetingRequests.filter((r) => r.targetId === viewerId && r.status === "pending" && !dismissedPokes.has(r.id))
+        : [],
+    [meetingRequests, dismissedPokes, viewerId]
   );
 
   // Outgoing list: viewer → others
   const myList = useMemo(
-    () => meetingRequests.filter((r) => r.requesterId === VIEWER_ID),
-    [meetingRequests]
+    () => (viewerId ? meetingRequests.filter((r) => r.requesterId === viewerId) : []),
+    [meetingRequests, viewerId]
   );
 
   function waveBack(requesterId: string) {
+    if (!viewerId) return;
     const alreadySent = meetingRequests.some(
-      (r) => r.requesterId === VIEWER_ID && r.targetId === requesterId && r.eventId === eventId
+      (r) => r.requesterId === viewerId && r.targetId === requesterId && r.eventId === eventId
     );
     if (!alreadySent) {
       addMeetingRequest({
         id: `req-${Date.now()}`,
         eventId,
-        requesterId: VIEWER_ID,
+        requesterId: viewerId,
         targetId: requesterId,
         createdAt: new Date().toISOString(),
         status: "pending",
@@ -71,8 +75,9 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
   }
 
   function toggleConnect(targetId: string) {
+    if (!viewerId || targetId === viewerId) return;
     const existing = meetingRequests.find(
-      (r) => r.requesterId === VIEWER_ID && r.targetId === targetId && r.eventId === eventId
+      (r) => r.requesterId === viewerId && r.targetId === targetId && r.eventId === eventId
     );
     if (existing) {
       removeMeetingRequest(existing.id);
@@ -80,7 +85,7 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
       addMeetingRequest({
         id: `req-${Date.now()}`,
         eventId,
-        requesterId: VIEWER_ID,
+        requesterId: viewerId,
         targetId,
         createdAt: new Date().toISOString(),
         status: "pending",
@@ -192,6 +197,7 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
           <div className="grid gap-3">
             {filteredAttendees.map((attendee) => {
               const isConnected = myList.some((r) => r.targetId === attendee.id);
+              const isSelf = attendee.id === viewerId;
               return (
                 <div key={attendee.id} className="flex items-center gap-2">
                   <Link href={`/events/${eventId}/people/${attendee.id}`} className="block min-w-0 flex-1">
@@ -212,11 +218,14 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
                   </Link>
                   <button
                     onClick={() => toggleConnect(attendee.id)}
+                    disabled={!viewerId || isSelf}
                     title={isConnected ? "Remove from my list" : "I want to meet this person"}
                     className={cn(
                       "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition",
                       isConnected
                         ? "border-primary/40 bg-primary/5 text-primary"
+                        : isSelf || !viewerId
+                          ? "border-border bg-muted text-muted-foreground/50"
                         : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-primary"
                     )}
                   >

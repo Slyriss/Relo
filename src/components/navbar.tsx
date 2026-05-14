@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, Settings, User } from "lucide-react";
+import { CalendarDays, LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { useAppStore } from "@/lib/store";
@@ -11,10 +11,35 @@ import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const user = useAppStore((s) => s.user);
+  const events = useAppStore((s) => s.events);
+  const attendees = useAppStore((s) => s.attendees);
   const logout = useAppStore((s) => s.logout);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const isAttendee = user?.role === "attendee";
+  const participantEvent = isAttendee
+    ? events.find((event) =>
+        attendees.some(
+          (attendee) => attendee.eventId === event.id && attendee.email.toLowerCase() === user.email.toLowerCase()
+        )
+      ) ?? events[0]
+    : undefined;
+  const participantAttendee = participantEvent
+    ? attendees.find(
+        (attendee) => attendee.eventId === participantEvent.id && attendee.email.toLowerCase() === user?.email.toLowerCase()
+      )
+    : undefined;
+  const appHref = isAttendee
+    ? participantEvent
+      ? `/events/${participantEvent.id || participantEvent.slug}`
+      : "/setup"
+    : "/dashboard/events";
+  const profileHref = isAttendee
+    ? participantEvent && participantAttendee
+      ? `/events/${participantEvent.id}/people/${participantAttendee.id}`
+      : appHref
+    : "/settings/profile";
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -39,7 +64,7 @@ export function Navbar() {
           <Link href="/pricing" className="hover:text-foreground">Pricing</Link>
           <Link href="/about" className="hover:text-foreground">About</Link>
           {user && (
-            <Link href="/dashboard/events" className="hover:text-foreground">Dashboard</Link>
+            <Link href={appHref} className="hover:text-foreground">{isAttendee ? "Event pass" : "Dashboard"}</Link>
           )}
         </nav>
 
@@ -70,20 +95,24 @@ export function Navbar() {
                 {/* Menu items */}
                 <div className="py-1">
                   <Link
-                    href="/settings/profile"
+                    href={profileHref}
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-muted"
                   >
                     <User className="h-4 w-4 text-muted-foreground" />
-                    Profile
+                    {isAttendee ? "Event profile" : "Admin profile"}
                   </Link>
                   <Link
-                    href="/dashboard/events"
+                    href={appHref}
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-muted"
                   >
-                    <Settings className="h-4 w-4 text-muted-foreground" />
-                    Dashboard
+                    {isAttendee ? (
+                      <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Settings className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    {isAttendee ? "Event pass" : "Dashboard"}
                   </Link>
                 </div>
 

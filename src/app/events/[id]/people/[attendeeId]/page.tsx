@@ -13,9 +13,7 @@ import { bioSimilarity } from "@/lib/ai/embeddings";
 import { buildApproachBrief } from "@/lib/approach-brief";
 import { formatDateRange, cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import { useAppStore, useEvent } from "@/lib/store";
-
-const VIEWER_ID = "att-1";
+import { useAppStore, useCurrentEventAttendee, useEvent } from "@/lib/store";
 
 export default function AttendeeProfilePage({ params }: { params: Promise<{ id: string; attendeeId: string }> }) {
   const { id, attendeeId } = use(params);
@@ -24,32 +22,36 @@ export default function AttendeeProfilePage({ params }: { params: Promise<{ id: 
   const allMeetings  = useAppStore(useShallow((s) => s.meetings));
   const event = useEvent(id);
   const eventId = event?.id ?? id;
+  const viewer = useCurrentEventAttendee(eventId);
+  const viewerId = viewer?.id;
   const meetingRequests    = useAppStore(useShallow((s) => s.meetingRequests));
   const addMeetingRequest  = useAppStore((s) => s.addMeetingRequest);
   const removeMeetingRequest = useAppStore((s) => s.removeMeetingRequest);
   const checkIns           = useAppStore(useShallow((s) => s.checkIns));
 
   const existingRequest = meetingRequests.find(
-    (r) => r.requesterId === VIEWER_ID && r.targetId === attendeeId && r.eventId === eventId
+    (r) => !!viewerId && r.requesterId === viewerId && r.targetId === attendeeId && r.eventId === eventId
   );
-  const isSelf = attendeeId === VIEWER_ID;
+  const isSelf = attendeeId === viewerId;
   const isRequested = !!existingRequest;
   const isHere = checkIns.some((c) => c.attendeeId === attendeeId && c.eventId === eventId);
   const alreadyMet = allMeetings.some(
     (meeting) =>
+      !!viewerId &&
       meeting.eventId === eventId &&
-      ((meeting.attendeeAId === VIEWER_ID && meeting.attendeeBId === attendeeId) ||
-        (meeting.attendeeAId === attendeeId && meeting.attendeeBId === VIEWER_ID))
+      ((meeting.attendeeAId === viewerId && meeting.attendeeBId === attendeeId) ||
+        (meeting.attendeeAId === attendeeId && meeting.attendeeBId === viewerId))
   );
 
   function toggleRequest() {
+    if (!viewerId || isSelf) return;
     if (isRequested && existingRequest) {
       removeMeetingRequest(existingRequest.id);
     } else {
       addMeetingRequest({
         id: `req-${Date.now()}`,
         eventId,
-        requesterId: VIEWER_ID,
+        requesterId: viewerId,
         targetId: attendeeId,
         createdAt: new Date().toISOString(),
         status: "pending",
@@ -58,20 +60,19 @@ export default function AttendeeProfilePage({ params }: { params: Promise<{ id: 
   }
 
   const eventAttendees = allAttendees.filter((a) => a.eventId === eventId);
-  const viewer  = eventAttendees[0];
   const target  = eventAttendees.find((a) => a.id === attendeeId);
 
   const match = useMemo(
-    () => (viewer && target ? scoreMatch(viewer, target, bioSimilarity(viewer.bio, target.bio)) : null),
-    [viewer, target]
+    () => (!isSelf && viewer && target ? scoreMatch(viewer, target, bioSimilarity(viewer.bio, target.bio)) : null),
+    [isSelf, viewer, target]
   );
 
   const approachBrief = useMemo(
     () =>
-      viewer && target && event && match
+      !isSelf && viewer && target && event && match
         ? buildApproachBrief({ source: viewer, target, event, match, isHere })
         : null,
-    [viewer, target, event, match, isHere]
+    [isSelf, viewer, target, event, match, isHere]
   );
 
   const sharedHistory = useMemo(
@@ -126,6 +127,8 @@ export default function AttendeeProfilePage({ params }: { params: Promise<{ id: 
               <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                 {isSelf ? (
                   <Badge className="min-h-9 border-primary/30 text-primary">This is you</Badge>
+                ) : !viewerId ? (
+                  <Badge className="min-h-9 border-muted bg-muted text-muted-foreground">Attendee preview</Badge>
                 ) : (
                   <button
                     onClick={toggleRequest}

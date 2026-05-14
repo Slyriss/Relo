@@ -4,8 +4,7 @@ import { use, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { QrCode, PenLine } from "lucide-react";
 import { ScanPanel } from "@/components/scan-panel";
-import { useAppStore, useEvent } from "@/lib/store";
-import { useShallow } from "zustand/react/shallow";
+import { useCurrentEventAttendee, useEvent } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export default function ScanPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,8 +13,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
   const eventId = event?.id ?? id;
   const [tab, setTab] = useState<"badge" | "log">("badge");
   const [badgeUrl, setBadgeUrl] = useState("");
-  const attendees = useAppStore(useShallow((s) => s.attendees.filter((a) => a.eventId === eventId)));
-  const me = attendees[0];
+  const me = useCurrentEventAttendee(eventId);
 
   useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;

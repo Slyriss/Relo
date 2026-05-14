@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { Eye, EyeOff, LogOut, Settings, User } from "lucide-react";
 import { ProfileAvatar } from "@/components/profile-avatar";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, useCurrentEventAttendee, useEvent } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { ProfileVisibility } from "@/types";
 
@@ -19,10 +19,10 @@ const VISIBILITY_QUICK: { key: keyof ProfileVisibility; label: string }[] = [
 ];
 
 export function EventNavbar({ eventId }: { eventId: string }) {
+  const event       = useEvent(eventId);
+  const resolvedEventId = event?.id ?? eventId;
   const user        = useAppStore((s) => s.user);
-  const ownAttendee = useAppStore((s) =>
-    s.attendees.find((attendee) => attendee.eventId === eventId && attendee.email === s.user?.email)
-  );
+  const ownAttendee = useCurrentEventAttendee(resolvedEventId);
   const logout      = useAppStore((s) => s.logout);
   const setVisibility = useAppStore((s) => s.setVisibility);
   const router      = useRouter();
@@ -30,7 +30,7 @@ export function EventNavbar({ eventId }: { eventId: string }) {
   const [open, setOpen]           = useState(false);
   const [tab, setTab]             = useState<"profile" | "display">("profile");
   const ref = useRef<HTMLDivElement>(null);
-  const eventProfileHref = ownAttendee ? `/events/${eventId}/people/${ownAttendee.id}` : `/events/${eventId}`;
+  const eventProfileHref = ownAttendee ? `/events/${resolvedEventId}/people/${ownAttendee.id}` : `/events/${resolvedEventId}`;
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -43,7 +43,7 @@ export function EventNavbar({ eventId }: { eventId: string }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href={`/events/${eventId}`} className="flex min-h-10 items-center gap-3 rounded-lg text-sm font-semibold">
+        <Link href={`/events/${resolvedEventId}`} className="flex min-h-10 items-center gap-3 rounded-lg text-sm font-semibold">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ffcc5c] text-xs font-black text-[#20160a] shadow-sm">
             R
           </span>

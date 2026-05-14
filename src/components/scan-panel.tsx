@@ -7,14 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShallow } from "zustand/react/shallow";
 import { queueMeeting, syncQueuedMeetings } from "@/lib/offline/meeting-queue";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, useCurrentEventAttendee } from "@/lib/store";
 import type { Attendee, Meeting } from "@/types";
 
 export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; scannedAttendeeId?: string }) {
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
   const logMeeting = useAppStore((state) => state.logMeeting);
-  const current = attendees[0];
-  const [targetId, setTargetId] = useState(scannedAttendeeId ?? attendees[1]?.id ?? "");
+  const current = useCurrentEventAttendee(eventId);
+  const availableTargets = useMemo(
+    () => attendees.filter((attendee) => attendee.id !== current?.id),
+    [attendees, current?.id]
+  );
+  const [targetId, setTargetId] = useState("");
   const [status, setStatus] = useState("");
   const [draft, setDraft] = useState("");
   const [draftLoading, setDraftLoading] = useState(false);
@@ -32,6 +36,12 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
     );
   }
   const target = useMemo(() => attendees.find((attendee) => attendee.id === targetId), [attendees, targetId]);
+
+  useEffect(() => {
+    const scannedTarget = availableTargets.find((attendee) => attendee.id === scannedAttendeeId);
+    const currentTargetStillValid = availableTargets.some((attendee) => attendee.id === targetId);
+    if (!currentTargetStillValid) setTargetId(scannedTarget?.id ?? availableTargets[0]?.id ?? "");
+  }, [availableTargets, scannedAttendeeId, targetId]);
 
   useEffect(() => {
     const sync = () =>
@@ -73,13 +83,18 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
+        {!current ? (
+          <div className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
+            No attendee profile is linked to this account for this event.
+          </div>
+        ) : null}
         <select
           className="h-11 rounded-xl border bg-background px-3 text-sm"
           value={targetId}
           onChange={(event) => setTargetId(event.target.value)}
+          disabled={!current || availableTargets.length === 0}
         >
-          {attendees
-            .filter((attendee) => attendee.id !== current?.id)
+          {availableTargets
             .map((attendee: Attendee) => (
               <option key={attendee.id} value={attendee.id}>
                 {attendee.name} - {attendee.company}
