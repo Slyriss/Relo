@@ -20,6 +20,9 @@ const VISIBILITY_QUICK: { key: keyof ProfileVisibility; label: string }[] = [
 
 export function EventNavbar({ eventId }: { eventId: string }) {
   const user        = useAppStore((s) => s.user);
+  const ownAttendee = useAppStore((s) =>
+    s.attendees.find((attendee) => attendee.eventId === eventId && attendee.email === s.user?.email)
+  );
   const logout      = useAppStore((s) => s.logout);
   const setVisibility = useAppStore((s) => s.setVisibility);
   const router      = useRouter();
@@ -27,6 +30,7 @@ export function EventNavbar({ eventId }: { eventId: string }) {
   const [open, setOpen]           = useState(false);
   const [tab, setTab]             = useState<"profile" | "display">("profile");
   const ref = useRef<HTMLDivElement>(null);
+  const eventProfileHref = ownAttendee ? `/events/${eventId}/people/${ownAttendee.id}` : `/events/${eventId}`;
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -98,12 +102,12 @@ export function EventNavbar({ eventId }: { eventId: string }) {
                 {tab === "profile" && (
                   <div className="py-1">
                     <Link
-                      href="/settings/profile"
+                      href={eventProfileHref}
                       onClick={() => setOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-muted"
                     >
                       <User className="h-4 w-4 text-muted-foreground" />
-                      Edit profile
+                      Event profile
                     </Link>
                     <Link
                       href="/setup"
@@ -157,11 +161,11 @@ export function EventNavbar({ eventId }: { eventId: string }) {
                       );
                     })}
                     <Link
-                      href="/settings/profile"
+                      href={eventProfileHref}
                       onClick={() => setOpen(false)}
                       className="mt-1 block text-center text-xs text-primary hover:underline"
                     >
-                      Full profile settings →
+                      Full attendee display →
                     </Link>
                   </div>
                 )}

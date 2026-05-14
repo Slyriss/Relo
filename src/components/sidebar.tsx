@@ -13,7 +13,7 @@ const items = [
   { href: "/dashboard/lookup",   label: "Research desk", icon: Search       },
   { href: "/dashboard/contacts", label: "CRM network",  icon: Network      },
   { href: "/dashboard/organization", label: "Org admin", icon: Users },
-  { href: "/settings/profile",   label: "Operator profile", icon: Settings     },
+  { href: "/settings/profile",   label: "Admin profile", icon: Settings     },
 ];
 
 export function Sidebar() {
@@ -35,7 +35,7 @@ export function Sidebar() {
         </span>
         <span>
           <span className="block leading-tight">Relo Admin</span>
-          <span className="block text-[11px] font-medium uppercase tracking-wide text-white/45">Organizer Control</span>
+          <span className="block text-[11px] font-medium uppercase tracking-wide text-white/45">Admin Control</span>
         </span>
       </Link>
       <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3">

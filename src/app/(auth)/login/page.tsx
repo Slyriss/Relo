@@ -1,17 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { demoAccounts } from "@/lib/demo-accounts";
+import { demoAccounts, type DemoAccount } from "@/lib/demo-accounts";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 
 export default function LoginPage() {
-  const router = useRouter();
   const refreshWorkspace = useAppStore((state) => state.refreshWorkspace);
   const [magicSent, setMagicSent] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
@@ -40,13 +38,16 @@ export default function LoginPage() {
     });
   }
 
-  async function demoLogin(email: string, password: string) {
+  async function demoLogin(account: DemoAccount) {
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
 
     setError("");
-    setDemoLoading(email);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    setDemoLoading(account.email);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: account.email,
+      password: account.password,
+    });
     setDemoLoading(null);
 
     if (signInError) {
@@ -55,7 +56,16 @@ export default function LoginPage() {
     }
 
     await refreshWorkspace();
-    router.push("/dashboard/events");
+    const workspace = useAppStore.getState();
+    const firstEvent = workspace.events[0];
+    const targetPath =
+      account.role === "attendee"
+        ? firstEvent
+          ? `/events/${firstEvent.id || firstEvent.slug}`
+          : "/setup"
+        : "/dashboard/events";
+
+    window.location.assign(targetPath);
   }
 
   return (
@@ -86,7 +96,7 @@ export default function LoginPage() {
                   key={account.email}
                   type="button"
                   variant="secondary"
-                  onClick={() => demoLogin(account.email, account.password)}
+                  onClick={() => demoLogin(account)}
                   disabled={demoLoading !== null}
                   className="justify-between"
                 >

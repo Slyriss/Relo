@@ -17,4 +17,13 @@ export const demoAccounts = [
     role: "attendee" as const,
     description: "Attendee view for browsing matches and logging meetings.",
   },
-];
+] satisfies DemoAccount[];
+
+export type DemoAccount = {
+  label: string;
+  email: string;
+  password: string;
+  name: string;
+  role: "organizer" | "attendee";
+  description: string;
+};
