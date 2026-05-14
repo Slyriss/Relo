@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { useAppStore } from "@/lib/store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ type Contact = {
   company: string;
   title: string;
   linkedinUrl?: string;
+  photoUrl?: string;
   goals: string[];
   meetingCount: number;
   eventsTogether: number;
@@ -87,6 +89,7 @@ export default function ContactsPage() {
         company:    rep.company,
         title:      rep.title,
         linkedinUrl: rep.linkedinUrl,
+        photoUrl: rep.photoUrl,
         goals:      rep.goals,
         meetingCount: meetings.length,
         eventsTogether: eventIds.size,
@@ -176,12 +179,7 @@ export default function ContactsPage() {
               <Card key={c.email} className="transition hover:border-primary/30">
                 <CardContent className="flex gap-4 pt-5 pb-4">
                   {/* Avatar */}
-                  <div
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                    style={{ background: color }}
-                  >
-                    {c.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                  </div>
+                  <ProfileAvatar name={c.name} photoUrl={c.photoUrl} className="h-11 w-11 text-sm text-white" style={{ background: color }} />
 
                   <div className="min-w-0 flex-1 space-y-2">
                     {/* Header row */}

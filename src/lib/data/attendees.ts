@@ -1,9 +1,8 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapDbAttendee } from "@/lib/data/mappers";
 import type { Attendee } from "@/types";
 import type { Database } from "@/types/database";
 
-type Client = SupabaseClient<Database>;
+type Client = any;
 
 export async function listAttendees(client: Client, eventId?: string): Promise<Attendee[]> {
   let query = client.from("attendees").select("*").order("created_at", { ascending: true });
@@ -14,7 +13,7 @@ export async function listAttendees(client: Client, eventId?: string): Promise<A
   return (data ?? []).map(mapDbAttendee);
 }
 
-export async function insertAttendees(client: Client, attendees: Attendee[]): Promise<Attendee[]> {
+export async function insertAttendees(client: Client, attendees: Array<Omit<Attendee, "id"> & { id?: string }>): Promise<Attendee[]> {
   const { data, error } = await client
     .from("attendees")
     .insert(

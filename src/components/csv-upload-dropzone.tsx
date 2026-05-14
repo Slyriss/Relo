@@ -15,7 +15,7 @@ export function CsvUploadDropzone({ eventId }: { eventId: string }) {
   async function handleFile(file: File) {
     const text = await file.text();
     const result = parseAttendeeCsv(text, eventId);
-    if (result.attendees.length) addAttendees(result.attendees);
+    if (result.attendees.length) await addAttendees(result.attendees);
     setMessage(
       `${result.attendees.length} attendees imported${
         result.errors.length ? `, ${result.errors.length} rows need review` : ""

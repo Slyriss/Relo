@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { Eye, EyeOff, LogOut, Settings, User } from "lucide-react";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { ProfileVisibility } from "@/types";
@@ -35,18 +36,17 @@ export function EventNavbar({ eventId }: { eventId: string }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const initials = user
-    ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : "?";
-
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="flex min-h-10 items-center gap-2 rounded-lg text-sm font-semibold">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <Link href={`/events/${eventId}`} className="flex min-h-10 items-center gap-3 rounded-lg text-sm font-semibold">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ffcc5c] text-xs font-black text-[#20160a] shadow-sm">
             R
           </span>
-          Relo
+          <span>
+            <span className="block leading-tight text-[#20160a]">Relo Pass</span>
+            <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Attendee mode</span>
+          </span>
         </Link>
 
         {user ? (
@@ -54,22 +54,20 @@ export function EventNavbar({ eventId }: { eventId: string }) {
             <button
               onClick={() => setOpen((v) => !v)}
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground ring-offset-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                "h-11 w-11 overflow-hidden rounded-full bg-primary text-xs font-bold text-primary-foreground ring-offset-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                 open && "ring-2 ring-primary/40"
               )}
               aria-label="Profile menu"
             >
-              {initials}
+              <ProfileAvatar name={user.name} photoUrl={user.photoUrl} className="h-full w-full rounded-full bg-primary text-primary-foreground" />
             </button>
 
             {open && (
-              <div className="absolute right-0 top-12 z-50 w-64 overflow-hidden rounded-xl border bg-background shadow-lg">
+              <div className="absolute right-0 top-14 z-50 w-64 overflow-hidden rounded-2xl border bg-background shadow-lg">
 
                 {/* User summary */}
                 <div className="flex items-center gap-3 border-b px-4 py-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                    {initials}
-                  </div>
+                  <ProfileAvatar name={user.name} photoUrl={user.photoUrl} className="h-9 w-9 rounded-full bg-primary text-sm text-primary-foreground" />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{user.name}</p>
                     <p className="truncate text-xs text-muted-foreground">

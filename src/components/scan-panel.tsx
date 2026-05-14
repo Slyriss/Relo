@@ -23,7 +23,7 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
     const start = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     start.setHours(10, 0, 0, 0);
     const end = new Date(start.getTime() + 30 * 60 * 1000);
-    const fmt = (d: Date) => d.toISOString().replace(/[-:.]/g, "").slice(0, 15) + "Z";
+    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(".", "").slice(0, 15) + "Z";
     return (
       `https://calendar.google.com/calendar/render?action=TEMPLATE` +
       `&text=${encodeURIComponent(`Follow-up with ${recipientName}`)}` +

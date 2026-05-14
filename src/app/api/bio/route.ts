@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
 
 const BIO_TEMPLATES = [
   (p: BioInput) =>
@@ -17,8 +19,29 @@ type BioInput = {
   skills?: string[];
 };
 
+const bioInputSchema = z.object({
+  name: z.string().trim().max(120).optional(),
+  company: z.string().trim().max(160).optional(),
+  title: z.string().trim().max(160).optional(),
+  industry: z.string().trim().max(120).optional(),
+  skills: z.array(z.string().trim().min(1).max(80)).max(12).optional(),
+});
+
 export async function POST(req: Request) {
-  const input: BioInput = await req.json();
+  const guarded = guardPost(req, "bio", 20, 60_000);
+  if (guarded) return guarded;
+
+  let body: unknown;
+  try {
+    body = await readJsonBody(req, 16_000);
+  } catch (error) {
+    const status = error instanceof RequestBodyError ? error.status : 400;
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid JSON" }, { status });
+  }
+
+  const parsed = bioInputSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Invalid bio input" }, { status: 400 });
+  const input: BioInput = parsed.data;
 
   await new Promise((r) => setTimeout(r, 600));
 

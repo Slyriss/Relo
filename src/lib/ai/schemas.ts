@@ -56,6 +56,7 @@ export const profileResponseSchema = z.object({
   company: z.string().trim().min(1).max(120).optional(),
   bio: z.string().trim().min(1).max(120).optional(),
   headline: z.string().trim().min(1).max(160).optional(),
+  photoUrl: z.string().url().optional(),
   goals: z.array(goalSchema).max(5).optional(),
   industry: z.string().trim().min(1).max(80).optional(),
   seniority: z.number().int().min(1).max(6).optional(),

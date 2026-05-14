@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { CheckCircle2, Clock, MessageSquare, UserCheck, UserPlus, X } from "lucide-react";
 import { MeetingCaptureForm } from "@/components/meeting-capture-form";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApproachBrief } from "@/lib/approach-brief";
-import { initials } from "@/lib/utils";
 import type { Attendee, CheckIn, Event, MatchRecommendation, Meeting, RecommendationAction } from "@/types";
 
 export function NextBestPerson({
@@ -60,9 +60,7 @@ export function NextBestPerson({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-background font-semibold">
-            {initials(target.name)}
-          </div>
+          <ProfileAvatar name={target.name} photoUrl={target.photoUrl} className="h-12 w-12 bg-background" />
           <div className="min-w-0">
             <p className="text-sm font-medium">{brief.whyNow}</p>
             <p className="mt-1 text-sm text-muted-foreground">{brief.mutualValue}</p>

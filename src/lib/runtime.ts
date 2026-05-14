@@ -13,10 +13,6 @@ export function getSupabasePublicConfig() {
   };
 }
 
-export function isDemoMode() {
-  return env.NEXT_PUBLIC_DEMO_MODE === "true";
-}
-
 export function isProductionDataMode() {
-  return !isDemoMode() && Boolean(getSupabasePublicConfig());
+  return Boolean(getSupabasePublicConfig());
 }

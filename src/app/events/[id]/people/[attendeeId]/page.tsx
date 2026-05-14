@@ -2,41 +2,44 @@
 
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, CheckCircle2, ExternalLink, MapPin, MessageSquare, ShieldAlert, Sparkles, Target, UserCheck, UserPlus } from "lucide-react";
-import { useMemo } from "react";
+import { use, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { getSharedEventHistory } from "@/lib/analytics";
 import { scoreMatch } from "@/lib/ai/matching";
 import { bioSimilarity } from "@/lib/ai/embeddings";
 import { buildApproachBrief } from "@/lib/approach-brief";
 import { formatDateRange, cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, useEvent } from "@/lib/store";
 
 const VIEWER_ID = "att-1";
 
-export default function AttendeeProfilePage({ params }: { params: { id: string; attendeeId: string } }) {
+export default function AttendeeProfilePage({ params }: { params: Promise<{ id: string; attendeeId: string }> }) {
+  const { id, attendeeId } = use(params);
   const allAttendees = useAppStore(useShallow((s) => s.attendees));
   const allEvents    = useAppStore(useShallow((s) => s.events));
   const allMeetings  = useAppStore(useShallow((s) => s.meetings));
-  const event = useAppStore(useShallow((s) => s.events.find((item) => item.id === params.id || item.slug === params.id)));
+  const event = useEvent(id);
+  const eventId = event?.id ?? id;
   const meetingRequests    = useAppStore(useShallow((s) => s.meetingRequests));
   const addMeetingRequest  = useAppStore((s) => s.addMeetingRequest);
   const removeMeetingRequest = useAppStore((s) => s.removeMeetingRequest);
   const checkIns           = useAppStore(useShallow((s) => s.checkIns));
 
   const existingRequest = meetingRequests.find(
-    (r) => r.requesterId === VIEWER_ID && r.targetId === params.attendeeId && r.eventId === params.id
+    (r) => r.requesterId === VIEWER_ID && r.targetId === attendeeId && r.eventId === eventId
   );
-  const isSelf = params.attendeeId === VIEWER_ID;
+  const isSelf = attendeeId === VIEWER_ID;
   const isRequested = !!existingRequest;
-  const isHere = checkIns.some((c) => c.attendeeId === params.attendeeId && c.eventId === params.id);
+  const isHere = checkIns.some((c) => c.attendeeId === attendeeId && c.eventId === eventId);
   const alreadyMet = allMeetings.some(
     (meeting) =>
-      meeting.eventId === params.id &&
-      ((meeting.attendeeAId === VIEWER_ID && meeting.attendeeBId === params.attendeeId) ||
-        (meeting.attendeeAId === params.attendeeId && meeting.attendeeBId === VIEWER_ID))
+      meeting.eventId === eventId &&
+      ((meeting.attendeeAId === VIEWER_ID && meeting.attendeeBId === attendeeId) ||
+        (meeting.attendeeAId === attendeeId && meeting.attendeeBId === VIEWER_ID))
   );
 
   function toggleRequest() {
@@ -45,19 +48,18 @@ export default function AttendeeProfilePage({ params }: { params: { id: string; 
     } else {
       addMeetingRequest({
         id: `req-${Date.now()}`,
-        eventId: params.id,
+        eventId,
         requesterId: VIEWER_ID,
-        targetId: params.attendeeId,
+        targetId: attendeeId,
         createdAt: new Date().toISOString(),
         status: "pending",
       });
     }
   }
 
-  // The viewer is always attendees[0] for the current event (Maya in demo)
-  const eventAttendees = allAttendees.filter((a) => a.eventId === params.id);
+  const eventAttendees = allAttendees.filter((a) => a.eventId === eventId);
   const viewer  = eventAttendees[0];
-  const target  = eventAttendees.find((a) => a.id === params.attendeeId);
+  const target  = eventAttendees.find((a) => a.id === attendeeId);
 
   const match = useMemo(
     () => (viewer && target ? scoreMatch(viewer, target, bioSimilarity(viewer.bio, target.bio)) : null),
@@ -81,7 +83,7 @@ export default function AttendeeProfilePage({ params }: { params: { id: string; 
   );
 
   // Exclude the current event from shared history — it's already in context
-  const pastShared = sharedHistory.filter((h) => h.event.id !== params.id);
+  const pastShared = sharedHistory.filter((h) => h.event.id !== eventId);
 
   if (!target) {
     return (
@@ -94,7 +96,7 @@ export default function AttendeeProfilePage({ params }: { params: { id: string; 
   return (
     <main className="mx-auto max-w-6xl space-y-5 px-4 py-6 pb-28 sm:px-6">
       <Link
-        href={`/events/${params.id}/people`}
+        href={`/events/${eventId}/people`}
         className="inline-flex min-h-10 items-center gap-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -103,8 +105,8 @@ export default function AttendeeProfilePage({ params }: { params: { id: string; 
 
       <Card>
         <CardContent className="flex flex-col gap-5 pt-5 md:flex-row">
-          <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-muted text-2xl font-bold">
-            {target.name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()}
+          <div className="relative shrink-0">
+            <ProfileAvatar name={target.name} photoUrl={target.photoUrl} className="h-20 w-20 rounded-2xl text-2xl" />
             {isHere && (
               <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />

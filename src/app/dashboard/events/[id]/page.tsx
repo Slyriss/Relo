@@ -18,10 +18,11 @@ import { useAppStore, useEvent } from "@/lib/store";
 
 export default function EventDetailPage({ params }: { params: { id: string } }) {
   const event = useEvent(params.id);
-  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === params.id)));
-  const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === params.id)));
-  const meetingRequests = useAppStore(useShallow((s) => s.meetingRequests.filter((r) => r.eventId === params.id)));
-  const checkIns = useAppStore(useShallow((s) => s.checkIns.filter((c) => c.eventId === params.id)));
+  const eventId = event?.id ?? params.id;
+  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
+  const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === eventId)));
+  const meetingRequests = useAppStore(useShallow((s) => s.meetingRequests.filter((r) => r.eventId === eventId)));
+  const checkIns = useAppStore(useShallow((s) => s.checkIns.filter((c) => c.eventId === eventId)));
   const facilitateMeetingRequest = useAppStore((s) => s.facilitateMeetingRequest);
   const removeMeetingRequest = useAppStore((s) => s.removeMeetingRequest);
 

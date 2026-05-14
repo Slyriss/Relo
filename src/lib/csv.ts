@@ -40,6 +40,7 @@ export function parseAttendeeCsv(csv: string, eventId: string): CsvImportResult 
         company: record.company,
         title: record.title,
         linkedinUrl: record.linkedin_url,
+        photoUrl: record.photo_url || record.photourl || undefined,
         bio: record.bio,
         headline: record.bio,
         goals: inferGoals(record.bio, record.title),

@@ -2,21 +2,25 @@
 
 import Link from "next/link";
 import { Bell, ChevronRight, List, Search, UserCheck, UserPlus, X } from "lucide-react";
-import { useMemo, useState, useRef, useEffect } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { initials, cn } from "@/lib/utils";
+import { ProfileAvatar } from "@/components/profile-avatar";
+import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, useEvent } from "@/lib/store";
 import type { Goal } from "@/types";
 
 const VIEWER_ID = "att-1";
 
 type Tab = "browse" | "pokes" | "mylist";
 
-export default function PeoplePage({ params }: { params: { id: string } }) {
-  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === params.id)));
-  const meetingRequests = useAppStore(useShallow((s) => s.meetingRequests.filter((r) => r.eventId === params.id)));
+export default function PeoplePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const event = useEvent(id);
+  const eventId = event?.id ?? id;
+  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
+  const meetingRequests = useAppStore(useShallow((s) => s.meetingRequests.filter((r) => r.eventId === eventId)));
   const addMeetingRequest = useAppStore((s) => s.addMeetingRequest);
   const removeMeetingRequest = useAppStore((s) => s.removeMeetingRequest);
 
@@ -52,12 +56,12 @@ export default function PeoplePage({ params }: { params: { id: string } }) {
 
   function waveBack(requesterId: string) {
     const alreadySent = meetingRequests.some(
-      (r) => r.requesterId === VIEWER_ID && r.targetId === requesterId && r.eventId === params.id
+      (r) => r.requesterId === VIEWER_ID && r.targetId === requesterId && r.eventId === eventId
     );
     if (!alreadySent) {
       addMeetingRequest({
         id: `req-${Date.now()}`,
-        eventId: params.id,
+        eventId,
         requesterId: VIEWER_ID,
         targetId: requesterId,
         createdAt: new Date().toISOString(),
@@ -68,14 +72,14 @@ export default function PeoplePage({ params }: { params: { id: string } }) {
 
   function toggleConnect(targetId: string) {
     const existing = meetingRequests.find(
-      (r) => r.requesterId === VIEWER_ID && r.targetId === targetId && r.eventId === params.id
+      (r) => r.requesterId === VIEWER_ID && r.targetId === targetId && r.eventId === eventId
     );
     if (existing) {
       removeMeetingRequest(existing.id);
     } else {
       addMeetingRequest({
         id: `req-${Date.now()}`,
-        eventId: params.id,
+        eventId,
         requesterId: VIEWER_ID,
         targetId,
         createdAt: new Date().toISOString(),
@@ -190,12 +194,10 @@ export default function PeoplePage({ params }: { params: { id: string } }) {
               const isConnected = myList.some((r) => r.targetId === attendee.id);
               return (
                 <div key={attendee.id} className="flex items-center gap-2">
-                  <Link href={`/events/${params.id}/people/${attendee.id}`} className="block min-w-0 flex-1">
+                  <Link href={`/events/${eventId}/people/${attendee.id}`} className="block min-w-0 flex-1">
                     <Card className="transition-colors hover:border-primary/40 hover:bg-muted/30">
                       <CardContent className="flex items-center gap-4 p-4">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted font-semibold">
-                          {initials(attendee.name)}
-                        </div>
+                        <ProfileAvatar name={attendee.name} photoUrl={attendee.photoUrl} className="h-11 w-11" />
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold">{attendee.name}</div>
                           <div className="text-sm text-muted-foreground">{attendee.title}, {attendee.company}</div>
@@ -244,13 +246,11 @@ export default function PeoplePage({ params }: { params: { id: string } }) {
               return (
                 <div key={req.id} className="rounded-xl border bg-background p-4">
                   <div className="flex items-start gap-3">
-                    <Link href={`/events/${params.id}/people/${sender.id}`}>
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted font-semibold hover:bg-muted/70 transition">
-                        {initials(sender.name)}
-                      </div>
+                      <Link href={`/events/${eventId}/people/${sender.id}`}>
+                      <ProfileAvatar name={sender.name} photoUrl={sender.photoUrl} className="h-11 w-11 transition hover:bg-muted/70" />
                     </Link>
                     <div className="min-w-0 flex-1">
-                      <Link href={`/events/${params.id}/people/${sender.id}`} className="hover:underline">
+                      <Link href={`/events/${eventId}/people/${sender.id}`} className="hover:underline">
                         <span className="font-semibold">{sender.name}</span>
                       </Link>
                       <p className="text-sm text-muted-foreground">{sender.title}, {sender.company}</p>
@@ -309,10 +309,8 @@ export default function PeoplePage({ params }: { params: { id: string } }) {
               if (!target) return null;
               return (
                 <div key={req.id} className="flex items-center gap-3 rounded-xl border bg-background p-3">
-                  <Link href={`/events/${params.id}/people/${target.id}`} className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80 transition">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted font-semibold">
-                      {initials(target.name)}
-                    </div>
+                  <Link href={`/events/${eventId}/people/${target.id}`} className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80 transition">
+                    <ProfileAvatar name={target.name} photoUrl={target.photoUrl} className="h-11 w-11" />
                     <div className="min-w-0">
                       <p className="font-semibold">{target.name}</p>
                       <p className="text-sm text-muted-foreground">{target.title}, {target.company}</p>

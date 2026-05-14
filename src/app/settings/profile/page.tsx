@@ -14,6 +14,7 @@ import {
   Target,
   User,
   Zap,
+  Image as ImageIcon,
   Eye,
   EyeOff,
 } from "lucide-react";
@@ -23,15 +24,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ProfileFieldToggle } from "@/components/profile-field-toggle";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { ProfileVisibility } from "@/types";
 
 const SCAN_STEPS = [
-  "Connecting to LinkedIn...",
-  "Reading public profile...",
-  "Extracting experience data...",
-  "Analyzing skills & industry...",
+  "Checking the public profile URL...",
+  "Reading available metadata...",
+  "Extracting profile context...",
+  "Preparing editable profile fields...",
   "Building your profile...",
 ];
 
@@ -43,10 +45,14 @@ export default function ProfileSettingsPage() {
   const [linkedinInput, setLinkedinInput] = useState(user?.linkedinUrl ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const [headline, setHeadline] = useState(user?.headline ?? "");
+  const [photoInput, setPhotoInput] = useState(user?.photoUrl ?? "");
+  const [photoStatus, setPhotoStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [photoError, setPhotoError] = useState("");
   const [scanStatus, setScanStatus] = useState<"idle" | "scanning" | "found" | "error">(
     user?.crawlStatus ?? "idle"
   );
   const [scanStep, setScanStep] = useState(0);
+  const [scanError, setScanError] = useState("");
   const [generatingBio, setGeneratingBio] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -71,6 +77,7 @@ export default function ProfileSettingsPage() {
     if (!linkedinInput.trim()) return;
     setScanStatus("scanning");
     setScanStep(0);
+    setScanError("");
 
     for (let i = 0; i < SCAN_STEPS.length; i++) {
       await new Promise((r) => setTimeout(r, 500 + Math.random() * 400));
@@ -84,6 +91,7 @@ export default function ProfileSettingsPage() {
         body: JSON.stringify({ linkedinUrl: linkedinInput }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not discover that profile.");
       updateUser({
         ...data.profile,
         linkedinUrl: linkedinInput,
@@ -93,7 +101,8 @@ export default function ProfileSettingsPage() {
       if (data.profile.bio) setBio(data.profile.bio);
       if (data.profile.headline) setHeadline(data.profile.headline);
       setScanStatus("found");
-    } catch {
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "Could not discover that profile.");
       setScanStatus("error");
     }
   }
@@ -120,6 +129,28 @@ export default function ProfileSettingsPage() {
     }
   }
 
+  async function saveProfilePhoto() {
+    if (!photoInput.trim() || !user) return;
+    setPhotoStatus("saving");
+    setPhotoError("");
+    try {
+      const res = await fetch("/api/profile-photo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: photoInput.trim(), ownerType: "user", ownerId: user.id }),
+      });
+      const data = (await res.json()) as { photoUrl?: string; error?: string };
+      if (!res.ok || !data.photoUrl) throw new Error(data.error ?? "Could not save profile photo.");
+      updateUser({ photoUrl: data.photoUrl });
+      setPhotoInput(data.photoUrl);
+      setPhotoStatus("saved");
+      setTimeout(() => setPhotoStatus("idle"), 2000);
+    } catch (error) {
+      setPhotoStatus("error");
+      setPhotoError(error instanceof Error ? error.message : "Could not save profile photo.");
+    }
+  }
+
   function save() {
     updateUser({ bio, headline });
     setSaved(true);
@@ -131,9 +162,7 @@ export default function ProfileSettingsPage() {
 
       {/* Profile header */}
       <div className="flex items-start gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
-          {user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-        </div>
+        <ProfileAvatar name={user.name} photoUrl={user.photoUrl} className="h-14 w-14 rounded-2xl bg-primary text-xl text-primary-foreground" />
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-semibold">{user.name}</h1>
           <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -154,6 +183,37 @@ export default function ProfileSettingsPage() {
         </div>
       </div>
 
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ImageIcon className="h-4 w-4 text-primary" />
+            Profile photo
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Use a photo URL you have permission to store, or an approved provider URL. LinkedIn-hosted images are rejected.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2">
+            <Input
+              value={photoInput}
+              onChange={(event) => {
+                setPhotoInput(event.target.value);
+                setPhotoStatus("idle");
+                setPhotoError("");
+              }}
+              placeholder="https://example.com/profile-photo.jpg"
+              className="flex-1"
+            />
+            <Button onClick={saveProfilePhoto} disabled={photoStatus === "saving" || !photoInput.trim()}>
+              {photoStatus === "saving" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Store"}
+            </Button>
+          </div>
+          {photoStatus === "saved" ? <p className="text-sm font-medium text-emerald-600">Profile photo stored.</p> : null}
+          {photoStatus === "error" ? <p className="text-sm font-medium text-destructive">{photoError}</p> : null}
+        </CardContent>
+      </Card>
+
       {/* Agent Discovery */}
       <Card>
         <CardHeader className="pb-3">
@@ -162,7 +222,7 @@ export default function ProfileSettingsPage() {
             Agent Discovery
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Paste your LinkedIn URL and the agent will auto-populate your profile.
+            Paste a public profile URL to import available metadata. LinkedIn pages are not scraped directly; paste profile text for AI parsing instead.
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -225,6 +285,13 @@ export default function ProfileSettingsPage() {
                   <> — <strong>{user.name}</strong> · {user.title} at {user.company}</>
                 )}
               </span>
+            </div>
+          )}
+
+          {scanStatus === "error" && (
+            <div className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{scanError || "Could not discover that profile."}</span>
             </div>
           )}
 

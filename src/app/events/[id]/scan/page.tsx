@@ -1,23 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { QrCode, PenLine } from "lucide-react";
 import { ScanPanel } from "@/components/scan-panel";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, useEvent } from "@/lib/store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 
-export default function ScanPage({ params }: { params: { id: string } }) {
+export default function ScanPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const event = useEvent(id);
+  const eventId = event?.id ?? id;
   const [tab, setTab] = useState<"badge" | "log">("badge");
   const [badgeUrl, setBadgeUrl] = useState("");
-  const attendees = useAppStore(useShallow((s) => s.attendees.filter((a) => a.eventId === params.id)));
+  const attendees = useAppStore(useShallow((s) => s.attendees.filter((a) => a.eventId === eventId)));
   const me = attendees[0];
 
   useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
-    if (me) setBadgeUrl(`${baseUrl}/meet/${params.id}/${me.id}`);
-  }, [me, params.id]);
+    if (me) setBadgeUrl(`${baseUrl}/meet/${eventId}/${me.id}`);
+  }, [me, eventId]);
 
   const tabs = [
     { id: "badge" as const, label: "My Badge",    icon: QrCode  },
@@ -26,6 +29,12 @@ export default function ScanPage({ params }: { params: { id: string } }) {
 
   return (
     <main className="mx-auto max-w-xl space-y-5 px-4 py-6 pb-28 sm:px-6">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-normal">Scan and log meetings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Share your badge or capture a conversation while the context is still fresh.
+        </p>
+      </div>
 
       {/* Tab switcher */}
       <div className="grid grid-cols-2 gap-2 rounded-xl border bg-muted/40 p-1">
@@ -85,7 +94,7 @@ export default function ScanPage({ params }: { params: { id: string } }) {
               Confirm who you met and add a note — saved offline if needed.
             </p>
           </div>
-          <ScanPanel eventId={params.id} />
+          <ScanPanel eventId={eventId} />
         </div>
       )}
     </main>

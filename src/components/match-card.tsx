@@ -6,12 +6,13 @@ import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildApproachBrief } from "@/lib/approach-brief";
 import { mockPrep } from "@/lib/ai/prep";
 import { useAppStore } from "@/lib/store";
 import { useShallow } from "zustand/react/shallow";
-import { initials, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { Attendee, MatchRecommendation } from "@/types";
 
 export function MatchCard({ attendee, match, source, eventId, viewerId, feedback, onLike, onDislike, onDismiss }: {
@@ -128,8 +129,8 @@ export function MatchCard({ attendee, match, source, eventId, viewerId, feedback
   return (
     <Card className={cn("min-w-0", feedback === "liked" && "border-emerald-300 bg-emerald-50/30")}>
       <CardContent className="flex min-w-0 gap-4 pt-5">
-        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted font-semibold">
-          {initials(attendee.name)}
+        <div className="relative shrink-0">
+          <ProfileAvatar name={attendee.name} photoUrl={attendee.photoUrl} className="h-12 w-12" />
           {isHere && (
             <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />

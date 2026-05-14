@@ -1,21 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { Loader2, Radio, Sparkles, Target } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { TopRecommendedPeople } from "@/components/enrichment";
 import { MatchCard } from "@/components/match-card";
 import { Button } from "@/components/ui/button";
 import { rankEnrichedRecommendations } from "@/lib/enrichment";
-import { useAppStore, useRecommendations } from "@/lib/store";
+import { useAppStore, useEvent, useRecommendations } from "@/lib/store";
 
 const INITIAL_COUNT = 8;
 const BATCH_SIZE = 6;
 
-export default function MatchesPage({ params }: { params: { id: string } }) {
-  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === params.id)));
-  const allRecs = useRecommendations(params.id);
-  const checkIns = useAppStore(useShallow((state) => state.checkIns.filter((checkIn) => checkIn.eventId === params.id)));
+export default function MatchesPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const event = useEvent(id);
+  const eventId = event?.id ?? id;
+  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
+  const allRecs = useRecommendations(eventId);
+  const checkIns = useAppStore(useShallow((state) => state.checkIns.filter((checkIn) => checkIn.eventId === eventId)));
   const source = attendees[0];
   const checkedInIds = new Set(checkIns.map((checkIn) => checkIn.attendeeId));
   const roomRecs = [...allRecs].sort((a, b) => {
@@ -87,7 +90,7 @@ export default function MatchesPage({ params }: { params: { id: string } }) {
         recommendations={topEnriched}
         title="Top 3 to prioritize now"
         description="Ranked first by live presence, then by event intent, public profile confidence, and mutual value."
-        getHref={(recommendation) => `/events/${params.id}/people/${recommendation.attendee.id}`}
+        getHref={(recommendation) => `/events/${eventId}/people/${recommendation.attendee.id}`}
       />
       <div className="grid gap-3">
         {shown.map((match) => {
@@ -98,7 +101,7 @@ export default function MatchesPage({ params }: { params: { id: string } }) {
               attendee={attendee}
               match={match}
               source={source}
-              eventId={params.id}
+              eventId={eventId}
               feedback={feedback[match.targetId] ?? null}
               onLike={() => handleLike(match.targetId)}
               onDislike={(r) => handleDislike(match.targetId, r)}

@@ -13,6 +13,7 @@ export const demoUser: User = {
   industry: "Venture Capital",
   location: "San Francisco, CA",
   skills: ["Venture Capital", "Startup Investing", "Portfolio Management", "AI Strategy", "Board Governance"],
+  photoUrl: "https://i.pravatar.cc/160?u=ava-northstar-vc",
   visibility: {
     email: false,
     company: true,
@@ -81,7 +82,8 @@ export const demoAttendees: Attendee[] = [
   goals: goals as Attendee["goals"],
   industry: industry as string,
   seniority: seniority as number,
-  profileComplete: Number(seniority) >= 4
+  profileComplete: Number(seniority) >= 4,
+  photoUrl: `https://i.pravatar.cc/160?u=${encodeURIComponent(email as string)}`
 }));
 
 export const demoMeetings: Meeting[] = [
@@ -178,7 +180,8 @@ function pastAttendee(
     goals: goals as Attendee["goals"],
     industry,
     seniority,
-    profileComplete: seniority >= 4
+    profileComplete: seniority >= 4,
+    photoUrl: `https://i.pravatar.cc/160?u=${encodeURIComponent(email)}`
   };
 }
 

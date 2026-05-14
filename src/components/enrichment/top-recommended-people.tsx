@@ -2,7 +2,7 @@ import { ArrowUpRight, Sparkles, UserRoundCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { initials } from "@/lib/utils";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import type { EnrichedRecommendation } from "@/lib/enrichment";
 import { SourceConfidenceMeter } from "./source-confidence-meter";
 
@@ -39,9 +39,11 @@ export function TopRecommendedPeople({
               return (
                 <li key={recommendation.attendee.id} className="rounded-lg border bg-background p-3 sm:p-4">
                   <div className="flex gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
-                      {initials(recommendation.attendee.name)}
-                    </div>
+                    <ProfileAvatar
+                      name={recommendation.attendee.name}
+                      photoUrl={recommendation.attendee.photoUrl}
+                      className="h-10 w-10 rounded-lg bg-primary/10 text-sm text-primary"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">

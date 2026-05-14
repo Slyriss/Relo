@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { use } from "react";
 import { ArrowRight, CheckCircle2, Radio } from "lucide-react";
 import { MatchCard } from "@/components/match-card";
 import { NextBestPerson } from "@/components/next-best-person";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { StatCard } from "@/components/stat-card";
 import { EventSwitcher } from "@/components/event-switcher";
 import { Button } from "@/components/ui/button";
@@ -12,13 +14,15 @@ import { useAppStore, useEvent, useRecommendations } from "@/lib/store";
 import { GOAL_COLOR } from "@/lib/graph";
 import { cn } from "@/lib/utils";
 
-export default function EventHomePage({ params }: { params: { id: string } }) {
-  const event = useEvent(params.id);
-  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === params.id)));
-  const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === params.id)));
-  const allRecommendations = useRecommendations(params.id);
-  const checkIns = useAppStore(useShallow((s) => s.checkIns.filter((c) => c.eventId === params.id)));
-  const recommendationActions = useAppStore(useShallow((s) => s.recommendationActions.filter((a) => a.eventId === params.id)));
+export default function EventHomePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const event = useEvent(id);
+  const eventId = event?.id ?? id;
+  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
+  const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === eventId)));
+  const allRecommendations = useRecommendations(eventId);
+  const checkIns = useAppStore(useShallow((s) => s.checkIns.filter((c) => c.eventId === eventId)));
+  const recommendationActions = useAppStore(useShallow((s) => s.recommendationActions.filter((a) => a.eventId === eventId)));
   const toggleCheckIn = useAppStore((s) => s.toggleCheckIn);
   const markRecommendationAction = useAppStore((s) => s.markRecommendationAction);
   const logMeeting = useAppStore((s) => s.logMeeting);
@@ -49,7 +53,7 @@ export default function EventHomePage({ params }: { params: { id: string } }) {
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 pb-28 sm:px-6">
 
-      <EventSwitcher currentEventId={params.id} />
+      <EventSwitcher currentEventId={id} />
 
       {/* Check-in bar */}
       <div className="flex items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3">
@@ -59,7 +63,7 @@ export default function EventHomePage({ params }: { params: { id: string } }) {
           {iCheckedIn && <span className="text-xs text-emerald-600 font-medium">· You&apos;re checked in</span>}
         </div>
         <button
-          onClick={() => viewerId && toggleCheckIn(params.id, viewerId)}
+          onClick={() => viewerId && toggleCheckIn(eventId, viewerId)}
           className={cn(
             "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
             "min-h-10",
@@ -81,13 +85,15 @@ export default function EventHomePage({ params }: { params: { id: string } }) {
           checkIns={checkIns}
           action={actionByTarget.get(nextBest.targetId)}
           onAction={(action, note) => markRecommendationAction({
-            eventId: params.id,
+            eventId,
             viewerId,
             targetId: nextBest.targetId,
             action,
             note,
           })}
-          onMeetingSave={(meeting) => logMeeting(meeting)}
+          onMeetingSave={async (meeting) => {
+            await logMeeting(meeting);
+          }}
         />
       ) : null}
 
@@ -127,15 +133,15 @@ export default function EventHomePage({ params }: { params: { id: string } }) {
             {hereNow.map((a) => (
             <Link
                 key={a.id}
-                href={`/events/${params.id}/people/${a.id}`}
+              href={`/events/${eventId}/people/${a.id}`}
                 className="flex min-h-10 items-center gap-2 rounded-xl border bg-background px-3 py-2 transition hover:border-primary/40"
               >
-                <div
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                <ProfileAvatar
+                  name={a.name}
+                  photoUrl={a.photoUrl}
+                  className="h-7 w-7 rounded-full text-[11px] text-white"
                   style={{ background: GOAL_COLOR[a.goals[0]] ?? "#94a3b8" }}
-                >
-                  {a.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                </div>
+                />
                 <div>
                   <p className="text-xs font-semibold leading-tight">{a.name.split(" ")[0]}</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">{a.company.split(" ")[0]}</p>
@@ -157,7 +163,7 @@ export default function EventHomePage({ params }: { params: { id: string } }) {
               match={match}
               source={attendees.find((item) => item.id === viewerId)}
               viewerId={viewerId}
-              eventId={params.id}
+              eventId={eventId}
             />
           ) : null;
         })}

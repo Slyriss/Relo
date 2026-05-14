@@ -6,7 +6,7 @@ Relo is a production-grade MVP for event relationship intelligence: attendee mat
 
 - Next.js 14 App Router, TypeScript, Tailwind CSS, shadcn-style local UI primitives
 - Supabase Auth, Postgres, Realtime-ready schema, Storage-ready profile photos, Row Level Security
-- Small Zustand store for demo/session state, with typed Supabase repositories for production data access
+- Client workspace store synchronized through typed Supabase-backed API routes
 - PWA manifest, service worker, IndexedDB offline meeting queue
 - OpenAI-compatible AI abstraction with DeepSeek/OpenAI support and deterministic mock fallback
 - PostHog hook wrapper
@@ -20,7 +20,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-The app ships with realistic local demo data, so it can be demoed before Supabase keys are configured. Add keys from `.env.example` to enable live auth/data integration work.
+Configure Supabase keys from `.env.example` before running the app. Auth, event creation, attendee imports, check-ins, meeting logs, and intro requests use live workspace data.
 
 ## Commands
 
@@ -45,14 +45,14 @@ npm run seed
 5. Enable magic link auth and add Google OAuth credentials in Supabase Auth providers.
 6. For direct migration runs, set `SUPABASE_DB_URL` to a Supabase pooler Postgres URI and run `npm run db:migrate`.
 
-## Demo Flow
+## Live Flow
 
-1. Go to `/signup` or `/login` and use the demo access button.
+1. Go to `/signup` or `/login` and authenticate with magic link or Google.
 2. Open `/dashboard/events` and create an event.
 3. Open an event detail page and import attendees via CSV.
-4. Visit `/events/relo-summit-2026/matches` to see ranked recommendations.
-5. Visit `/events/relo-summit-2026/scan` to log meetings. Offline submissions queue in IndexedDB and sync when online.
-6. Review organizer metrics on `/dashboard/events/relo-summit-2026` and attendee recap at `/events/relo-summit-2026/recap`.
+4. Open the attendee event URL to see ranked recommendations.
+5. Visit the scan page to log meetings. Offline submissions queue in IndexedDB and sync when online.
+6. Review organizer metrics in the admin event view and attendee recap from the participant event view.
 
 ## CSV Columns
 

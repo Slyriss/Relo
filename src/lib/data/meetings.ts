@@ -1,9 +1,8 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapDbMeeting } from "@/lib/data/mappers";
 import type { Meeting } from "@/types";
 import type { Database } from "@/types/database";
 
-type Client = SupabaseClient<Database>;
+type Client = any;
 
 export async function listMeetings(client: Client, eventId?: string): Promise<Meeting[]> {
   let query = client.from("meetings").select("*").order("created_at", { ascending: false });

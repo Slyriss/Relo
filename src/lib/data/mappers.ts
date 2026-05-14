@@ -1,5 +1,5 @@
 import { defaultVisibility } from "@/types";
-import type { Attendee, Event, Goal, Meeting, Organization, ProfileVisibility, User } from "@/types";
+import type { Attendee, CheckIn, Event, Goal, Meeting, MeetingRequest, Organization, ProfileVisibility, User } from "@/types";
 import type { Tables } from "@/types/database";
 
 const goalValues = new Set(["fundraising", "hiring", "partnerships", "customers", "learning"]);
@@ -84,5 +84,26 @@ export function mapDbMeeting(row: Tables<"meetings">): Meeting {
     note: row.note,
     createdAt: row.created_at,
     synced: true,
+  };
+}
+
+export function mapDbMeetingRequest(row: Tables<"meeting_requests">): MeetingRequest {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    requesterId: row.requester_id,
+    targetId: row.target_id,
+    note: row.note ?? undefined,
+    status: row.status,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapDbCheckIn(row: Tables<"check_ins">): CheckIn {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    attendeeId: row.attendee_id,
+    checkedInAt: row.checked_in_at,
   };
 }

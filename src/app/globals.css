@@ -17,6 +17,34 @@
   --destructive: 0 84% 60%;
 }
 
+.admin-shell {
+  --background: 220 17% 96%;
+  --foreground: 218 33% 9%;
+  --card: 0 0% 100%;
+  --card-foreground: 218 33% 9%;
+  --muted: 220 16% 92%;
+  --muted-foreground: 217 11% 39%;
+  --border: 220 15% 84%;
+  --primary: 158 64% 39%;
+  --primary-foreground: 156 38% 8%;
+  --accent: 40 96% 52%;
+  --accent-foreground: 222 47% 11%;
+}
+
+.participant-shell {
+  --background: 42 78% 97%;
+  --foreground: 24 28% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 24 28% 13%;
+  --muted: 39 38% 91%;
+  --muted-foreground: 26 13% 43%;
+  --border: 35 31% 82%;
+  --primary: 176 62% 32%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 345 74% 58%;
+  --accent-foreground: 0 0% 100%;
+}
+
 .dark {
   --background: 222 47% 7%;
   --foreground: 210 40% 98%;

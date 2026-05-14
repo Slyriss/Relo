@@ -27,13 +27,13 @@ export function EventForm() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     const id = slugify(form.title || crypto.randomUUID());
     const nextEvent: Event = {
       id,
       slug: id,
-      organizationId: organization.id,
+      organizationId: organization?.id ?? "pending",
       title: form.title,
       description: form.description,
       venue: form.venue,
@@ -41,8 +41,8 @@ export function EventForm() {
       endsAt: new Date(form.endsAt).toISOString(),
       status: form.status as Event["status"]
     };
-    createEvent(nextEvent);
-    router.push(`/dashboard/events/${id}`);
+    const saved = await createEvent(nextEvent);
+    router.push(`/dashboard/events/${saved?.id ?? id}`);
   }
 
   return (

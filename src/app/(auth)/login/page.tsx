@@ -1,17 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { useAppStore } from "@/lib/store";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const loginDemo = useAppStore((state) => state.loginDemo);
   const [magicSent, setMagicSent] = useState(false);
 
   async function magicLink(event: React.FormEvent<HTMLFormElement>) {
@@ -20,7 +16,10 @@ export default function LoginPage() {
     const email = String(formData.get("email"));
     const supabase = createSupabaseBrowserClient();
     if (supabase) {
-      await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${location.origin}/dashboard` } });
+      await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${location.origin}/auth/callback?next=/dashboard/events` },
+      });
       setMagicSent(true);
     }
   }
@@ -30,7 +29,7 @@ export default function LoginPage() {
     if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/dashboard` }
+      options: { redirectTo: `${location.origin}/auth/callback?next=/dashboard/events` }
     });
   }
 
@@ -53,15 +52,6 @@ export default function LoginPage() {
           )}
           <Button variant="outline" onClick={googleOAuth}>
             Continue with Google
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              loginDemo();
-              router.push("/dashboard/events");
-            }}
-          >
-            Use demo access
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             New here? <Link href="/signup" className="text-primary">Create an account</Link>

@@ -33,7 +33,7 @@ export function ProfilePasteImport({ eventId }: { eventId: string }) {
     finally { setLoading(false); }
   }
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!parsed) return;
     const email = parsed.email ?? `import-${Date.now()}@relo.app`;
     const attendee: Attendee = {
@@ -45,12 +45,13 @@ export function ProfilePasteImport({ eventId }: { eventId: string }) {
       title: parsed.title ?? "",
       bio: parsed.bio ?? text.slice(0, 120),
       headline: parsed.bio ?? text.slice(0, 120),
+      photoUrl: parsed.photoUrl,
       goals: parsed.goals?.length ? parsed.goals : ["learning"],
       industry: parsed.industry,
       seniority: parsed.seniority,
       profileComplete: Boolean(parsed.name && parsed.company && parsed.bio)
     };
-    addAttendees([attendee]);
+    await addAttendees([attendee]);
     setAdded(true);
     setText("");
     setParsed(null);

@@ -25,10 +25,10 @@ import type { CrawledProfile, ProfileVisibility } from "@/types";
 const STEPS = ["Account", "Discover", "Privacy"] as const;
 
 const SCAN_STEPS = [
-  "Connecting to LinkedIn...",
-  "Reading public profile...",
-  "Extracting experience data...",
-  "Analyzing skills & industry...",
+  "Checking the public profile URL...",
+  "Reading available metadata...",
+  "Extracting profile context...",
+  "Preparing editable profile fields...",
   "Building your profile...",
 ];
 
@@ -64,6 +64,7 @@ export default function SetupPage() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [scanStatus, setScanStatus] = useState<"idle" | "scanning" | "found" | "error">("idle");
   const [scanStep, setScanStep] = useState(0);
+  const [scanError, setScanError] = useState("");
   const [discovered, setDiscovered] = useState<CrawledProfile | null>(null);
 
   // Step 2 state — mirrors store visibility
@@ -78,6 +79,7 @@ export default function SetupPage() {
     if (!linkedinUrl.trim()) return;
     setScanStatus("scanning");
     setScanStep(0);
+    setScanError("");
 
     for (let i = 0; i < SCAN_STEPS.length; i++) {
       await new Promise((r) => setTimeout(r, 500 + Math.random() * 350));
@@ -91,6 +93,7 @@ export default function SetupPage() {
         body: JSON.stringify({ linkedinUrl }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not discover that profile.");
       setDiscovered(data.profile);
       updateUser({
         ...data.profile,
@@ -99,7 +102,8 @@ export default function SetupPage() {
         crawledAt: new Date().toISOString(),
       });
       setScanStatus("found");
-    } catch {
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "Could not discover that profile.");
       setScanStatus("error");
     }
   }
@@ -215,7 +219,7 @@ export default function SetupPage() {
                 Discover your profile
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Our agent reads your public LinkedIn to auto-fill company, title, bio, and more.
+                Paste a public profile URL to import available metadata. LinkedIn pages are not scraped directly; paste profile text instead when needed.
                 Nothing is stored without your approval.
               </p>
             </CardHeader>
@@ -306,7 +310,7 @@ export default function SetupPage() {
               {scanStatus === "error" && (
                 <div className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  Couldn&apos;t scan that profile. Check the URL and try again.
+                  {scanError || "Couldn&apos;t scan that profile. Check the URL and try again."}
                 </div>
               )}
 

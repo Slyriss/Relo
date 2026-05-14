@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -23,10 +24,6 @@ export function Navbar() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  const initials = user
-    ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : "";
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
@@ -51,12 +48,12 @@ export function Navbar() {
             <button
               onClick={() => setOpen((v) => !v)}
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                "h-10 w-10 overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                 open && "ring-2 ring-primary/40"
               )}
               aria-label="Account menu"
             >
-              {initials}
+              <ProfileAvatar name={user.name} photoUrl={user.photoUrl} className="h-full w-full rounded-full bg-primary text-primary-foreground" />
             </button>
 
             {open && (

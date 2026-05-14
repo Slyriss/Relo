@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { CalendarClock, Copy, Mail, Bell, CheckCircle2 } from "lucide-react";
 import { ExportActions } from "@/components/export-actions";
 import { FollowupStatusBadge } from "@/components/followup-status-badge";
@@ -13,10 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/stat-card";
 
-export default function RecapPage({ params }: { params: { id: string } }) {
-  const event = useAppStore((state) => state.events.find((item) => item.id === params.id || item.slug === params.id));
-  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === params.id)));
-  const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === params.id)));
+export default function RecapPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const event = useAppStore((state) => state.events.find((item) => item.id === id || item.slug === id));
+  const eventId = event?.id ?? id;
+  const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
+  const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === eventId)));
   const sender = attendees[0];
   const [overrides, setOverrides] = useState<Record<string, "drafted" | "copied" | "sent" | "reminded">>({});
   const committedMeetings = meetings.filter((meeting) => meeting.promisedAction || meeting.dueDate);

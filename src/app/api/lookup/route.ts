@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { attendeePayloadSchema } from "@/lib/ai/schemas";
+import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
 import { aiProvider, type ConnectionPlan } from "@/lib/ai/provider";
 import { scanAttendeeEnrichment } from "@/lib/data/enrichment";
 import { fetchRecentNews } from "@/lib/news";
@@ -93,11 +94,15 @@ async function withTimeout<T>(promise: Promise<T>, fallback: T, timeoutMs = 5000
 }
 
 export async function POST(request: Request) {
+  const guarded = guardPost(request, "lookup", 20, 60_000);
+  if (guarded) return guarded;
+
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    body = await readJsonBody(request);
+  } catch (error) {
+    const status = error instanceof RequestBodyError ? error.status : 400;
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid JSON" }, { status });
   }
 
   const parsed = lookupSchema.safeParse(body);

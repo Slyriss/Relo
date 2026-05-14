@@ -1,18 +1,19 @@
 import { EventNavbar } from "@/components/event-navbar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
-export default function EventLayout({
+export default async function EventLayout({
   children,
   params
 }: {
   children: React.ReactNode;
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   return (
-    <>
-      <EventNavbar eventId={params.id} />
+    <div className="participant-shell min-h-screen bg-background">
+      <EventNavbar eventId={id} />
       {children}
-      <MobileBottomNav eventId={params.id} />
-    </>
+      <MobileBottomNav eventId={id} />
+    </div>
   );
 }

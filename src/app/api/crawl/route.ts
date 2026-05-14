@@ -1,64 +1,80 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
 import type { CrawledProfile } from "@/types";
 
-// Mock profiles keyed by partial URL slug — extend as needed
-const MOCK_PROFILES: Record<string, CrawledProfile> = {
-  default: {
-    company: "Acme Corp",
-    title: "Product Manager",
-    industry: "Technology",
-    location: "San Francisco, CA",
-    bio: "Product leader with 8+ years building 0→1 products at the intersection of AI and enterprise software. Passionate about developer experience and reducing time-to-value for complex workflows.",
-    headline: "PM · AI Products",
-    skills: ["Product Strategy", "AI/ML", "Go-to-Market", "Stakeholder Management"],
-  },
-  avachen: {
-    company: "Northstar Ventures",
-    title: "General Partner",
-    industry: "Venture Capital",
-    location: "San Francisco, CA",
-    bio: "General Partner at Northstar Ventures, focused on early-stage AI and infrastructure startups. Former founder with two exits. Angel investor in 40+ companies across enterprise SaaS, developer tools, and climate tech.",
-    headline: "GP @ Northstar Ventures · AI & Infrastructure",
-    skills: ["Venture Capital", "Startup Investing", "Portfolio Management", "AI Strategy", "Board Governance"],
-  },
-  marcuslee: {
-    company: "Stripe",
-    title: "Engineering Manager",
-    industry: "Fintech",
-    location: "San Francisco, CA",
-    bio: "Engineering leader at Stripe working on payments infrastructure. Previously led teams at Square and Plaid. Interested in hiring top infrastructure engineers and building fintech partnerships.",
-    headline: "EM @ Stripe · Payments Infrastructure",
-    skills: ["Engineering Leadership", "Distributed Systems", "Fintech", "Team Building"],
-  },
-  sarahpark: {
-    company: "Sequoia Capital",
-    title: "Principal",
-    industry: "Venture Capital",
-    location: "Menlo Park, CA",
-    bio: "Principal at Sequoia Capital focused on B2B SaaS and developer infrastructure. Former operator at Salesforce and Twilio. I love meeting founders tackling hard technical problems.",
-    headline: "Principal @ Sequoia · B2B SaaS",
-    skills: ["Investment Analysis", "B2B SaaS", "Developer Tools", "Due Diligence"],
-  },
-};
+const crawlSchema = z.object({
+  linkedinUrl: z.string().trim().url().max(500).optional(),
+});
 
-function extractSlug(url: string): string {
-  try {
-    const clean = url.replace(/\/$/, "");
-    const parts = clean.split("/");
-    return parts[parts.length - 1].toLowerCase().replace(/[^a-z0-9]/g, "");
-  } catch {
-    return "";
-  }
+function textBetween(html: string, pattern: RegExp) {
+  return html.match(pattern)?.[1]?.replace(/\s+/g, " ").trim();
+}
+
+function extractPublicMetadata(html: string): CrawledProfile {
+  const title =
+    textBetween(html, /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["'][^>]*>/i) ??
+    textBetween(html, /<title[^>]*>([^<]+)<\/title>/i);
+  const description =
+    textBetween(html, /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["'][^>]*>/i) ??
+    textBetween(html, /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["'][^>]*>/i);
+
+  return {
+    headline: title,
+    bio: description,
+    skills: [],
+  };
 }
 
 export async function POST(req: Request) {
-  const { linkedinUrl } = await req.json();
+  const guarded = guardPost(req, "crawl", 20, 60_000);
+  if (guarded) return guarded;
 
-  // Simulate network latency
-  await new Promise((r) => setTimeout(r, 400));
+  let body: unknown;
+  try {
+    body = await readJsonBody(req, 8_000);
+  } catch (error) {
+    const status = error instanceof RequestBodyError ? error.status : 400;
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid JSON" }, { status });
+  }
 
-  const slug = extractSlug(linkedinUrl ?? "");
-  const profile: CrawledProfile = MOCK_PROFILES[slug] ?? MOCK_PROFILES.default;
+  const parsed = crawlSchema.safeParse(body);
+  if (!parsed.success || !parsed.data.linkedinUrl) {
+    return NextResponse.json({ error: "A public profile URL is required" }, { status: 400 });
+  }
 
-  return NextResponse.json({ profile, source: "linkedin", scannedAt: new Date().toISOString() });
+  const url = new URL(parsed.data.linkedinUrl);
+  if (url.hostname.includes("linkedin.com")) {
+    return NextResponse.json(
+      {
+        error:
+          "LinkedIn pages are not scraped. Paste profile text into the AI profile import field to extract a profile from real user-provided content.",
+      },
+      { status: 422 }
+    );
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Relo profile metadata fetcher" },
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      return NextResponse.json({ error: "Could not read that public page" }, { status: 502 });
+    }
+
+    const html = await response.text();
+    const profile = extractPublicMetadata(html);
+    if (!profile.headline && !profile.bio) {
+      return NextResponse.json({ error: "No public profile metadata was found on that page" }, { status: 404 });
+    }
+
+    return NextResponse.json({ profile, source: "public-url", scannedAt: new Date().toISOString() });
+  } catch {
+    return NextResponse.json({ error: "Could not fetch that public profile URL" }, { status: 502 });
+  }
 }

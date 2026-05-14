@@ -18,8 +18,8 @@ export default function OrganizationPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-semibold tracking-normal">{org.name}</h1>
-        <p className="mt-1 text-muted-foreground">Owner workspace — organizer permissions across all events.</p>
+        <h1 className="text-3xl font-semibold tracking-normal">{org?.name ?? "Workspace"}</h1>
+        <p className="mt-1 text-muted-foreground">Owner workspace - organizer permissions across all events.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

@@ -7,8 +7,7 @@ export function middleware(request: NextRequest) {
   if (!isProtected) return NextResponse.next();
 
   const hasSupabaseSession = request.cookies.getAll().some((cookie) => cookie.name.startsWith("sb-"));
-  const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-  if (!hasSupabaseSession && !demoMode) {
+  if (!hasSupabaseSession) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);

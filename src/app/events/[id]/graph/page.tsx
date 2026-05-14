@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { ArrowRight, GitBranch, Handshake, Network, Users, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMissedConnections, GOAL_COLOR, graphifyEventNetwork } from "@/lib/graph";
 import { useShallow } from "zustand/react/shallow";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, useEvent } from "@/lib/store";
 
 const GOAL_LABEL: Record<string, string> = {
   fundraising: "Raising",
@@ -15,9 +15,12 @@ const GOAL_LABEL: Record<string, string> = {
   learning: "Learning",
 };
 
-export default function GraphPage({ params }: { params: { id: string } }) {
-  const attendees = useAppStore(useShallow((s) => s.attendees.filter((a) => a.eventId === params.id)));
-  const meetings  = useAppStore(useShallow((s) => s.meetings.filter((m)  => m.eventId === params.id)));
+export default function GraphPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const event = useEvent(id);
+  const eventId = event?.id ?? id;
+  const attendees = useAppStore(useShallow((s) => s.attendees.filter((a) => a.eventId === eventId)));
+  const meetings  = useAppStore(useShallow((s) => s.meetings.filter((m)  => m.eventId === eventId)));
   const [showGraph, setShowGraph] = useState(false);
   const [showSuggested, setShowSuggested] = useState(true);
 

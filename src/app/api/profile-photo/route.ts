@@ -1,0 +1,84 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
+import { storeProfilePhotoFromUrl, validateProfilePhotoSource } from "@/lib/profile-photos";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const inputSchema = z.object({
+  imageUrl: z.string().url(),
+  ownerType: z.enum(["attendee", "user"]),
+  ownerId: z.string().min(1),
+});
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function POST(request: Request) {
+  const guarded = guardPost(request, "profile-photo", 10, 60_000);
+  if (guarded) return guarded;
+
+  let body: unknown;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    const status = error instanceof RequestBodyError ? error.status : 400;
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid JSON" }, { status });
+  }
+
+  const parsed = inputSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "imageUrl, ownerType, and ownerId are required" }, { status: 400 });
+  }
+
+  const source = validateProfilePhotoSource(parsed.data.imageUrl);
+  if (!source.ok) return NextResponse.json({ error: source.reason }, { status: 400 });
+
+  const client = createSupabaseAdminClient();
+  if (!client) {
+    return NextResponse.json({ error: "Supabase service role is not configured" }, { status: 503 });
+  }
+
+  const serverClient = await createSupabaseServerClient();
+  const { data: authData } = serverClient ? await serverClient.auth.getUser() : { data: { user: null } };
+  const authUser = authData.user;
+  if (!authUser) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+
+  if (parsed.data.ownerType === "user" && parsed.data.ownerId !== authUser.id) {
+    return NextResponse.json({ error: "Cannot update another user's profile photo" }, { status: 403 });
+  }
+
+  if (parsed.data.ownerType === "attendee") {
+    const { data: attendee, error: attendeeError } = await client
+      .from("attendees")
+      .select("id,user_id,event_id")
+      .eq("id", parsed.data.ownerId)
+      .maybeSingle();
+
+    if (attendeeError) {
+      return NextResponse.json({ error: attendeeError.message }, { status: 500 });
+    }
+    if (!attendee) return NextResponse.json({ error: "Attendee not found" }, { status: 404 });
+    if (attendee.user_id !== authUser.id) {
+      return NextResponse.json({ error: "Cannot update another attendee's profile photo" }, { status: 403 });
+    }
+  }
+
+  try {
+    const stored = await storeProfilePhotoFromUrl(client, parsed.data.imageUrl, {
+      type: parsed.data.ownerType,
+      id: parsed.data.ownerId,
+    });
+
+    const table = parsed.data.ownerType === "attendee" ? "attendees" : "users";
+    const { error } = await client.from(table).update({ photo_url: stored.publicUrl }).eq("id", parsed.data.ownerId);
+    if (error) throw error;
+
+    return NextResponse.json({ photoUrl: stored.publicUrl, path: stored.path });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Could not store profile photo" },
+      { status: 500 }
+    );
+  }
+}
