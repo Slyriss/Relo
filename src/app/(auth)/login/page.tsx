@@ -1,14 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { demoAccounts } from "@/lib/demo-accounts";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useAppStore } from "@/lib/store";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const refreshWorkspace = useAppStore((state) => state.refreshWorkspace);
   const [magicSent, setMagicSent] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   async function magicLink(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,6 +40,24 @@ export default function LoginPage() {
     });
   }
 
+  async function demoLogin(email: string, password: string) {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+
+    setError("");
+    setDemoLoading(email);
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    setDemoLoading(null);
+
+    if (signInError) {
+      setError("Demo account is not seeded yet. Run npm run seed:demo-accounts, then try again.");
+      return;
+    }
+
+    await refreshWorkspace();
+    router.push("/dashboard/events");
+  }
+
   return (
     <main className="grid min-h-screen place-items-center bg-muted/40 px-4">
       <Card className="w-full max-w-md shadow-soft">
@@ -53,6 +78,27 @@ export default function LoginPage() {
           <Button variant="outline" onClick={googleOAuth}>
             Continue with Google
           </Button>
+          <div className="rounded-xl border bg-muted/30 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Demo accounts</p>
+            <div className="mt-3 grid gap-2">
+              {demoAccounts.map((account) => (
+                <Button
+                  key={account.email}
+                  type="button"
+                  variant="secondary"
+                  onClick={() => demoLogin(account.email, account.password)}
+                  disabled={demoLoading !== null}
+                  className="justify-between"
+                >
+                  <span>{account.label}</span>
+                  <span className="text-xs font-normal opacity-70">
+                    {demoLoading === account.email ? "Signing in..." : account.email}
+                  </span>
+                </Button>
+              ))}
+            </div>
+            {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
+          </div>
           <p className="text-center text-sm text-muted-foreground">
             New here? <Link href="/signup" className="text-primary">Create an account</Link>
           </p>

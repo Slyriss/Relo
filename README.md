@@ -54,6 +54,23 @@ npm run seed
 5. Visit the scan page to log meetings. Offline submissions queue in IndexedDB and sync when online.
 6. Review organizer metrics in the admin event view and attendee recap from the participant event view.
 
+## Demo Accounts
+
+Seed real Supabase Auth demo accounts with:
+
+```bash
+npm run seed:demo-accounts
+```
+
+Then sign in from `/login` with one of the demo account buttons:
+
+```text
+Organizer: organizer@relo.demo / ReloDemo2026!
+Participant: participant@relo.demo / ReloDemo2026!
+```
+
+These are real Supabase password accounts backed by seeded organization, event, attendee, meeting, check-in, and intro-request records.
+
 ## CSV Columns
 
 ```csv
