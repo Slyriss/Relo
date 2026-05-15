@@ -4,7 +4,8 @@ import { lookup } from "node:dns/promises";
 import type { Database } from "@/types/database";
 
 export const PROFILE_PHOTO_BUCKET = "profile-photos";
-const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024;
+export const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024;
+export const ALLOWED_PROFILE_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 const BLOCKED_PHOTO_HOSTS = ["linkedin.com", "www.linkedin.com", "media.licdn.com", "licdn.com", "lnkd.in"];
 
 export type ProfilePhotoOwner = {
@@ -66,6 +67,42 @@ export function profilePhotoPath(owner: ProfilePhotoOwner, contentType: string) 
   return `${owner.type}/${owner.id}/${Date.now()}.${ext}`;
 }
 
+async function ensureProfilePhotoBucket(client: SupabaseClient<Database>) {
+  const { error } = await client.storage.getBucket(PROFILE_PHOTO_BUCKET);
+  if (!error) return;
+
+  const { error: createError } = await client.storage.createBucket(PROFILE_PHOTO_BUCKET, {
+    public: true,
+    fileSizeLimit: MAX_PROFILE_PHOTO_BYTES,
+    allowedMimeTypes: ALLOWED_PROFILE_PHOTO_TYPES,
+  });
+  if (createError && !/already exists/i.test(createError.message)) throw createError;
+}
+
+export async function storeProfilePhotoBytes(
+  client: SupabaseClient<Database>,
+  bytes: ArrayBuffer,
+  contentType: string,
+  owner: ProfilePhotoOwner
+) {
+  if (!ALLOWED_PROFILE_PHOTO_TYPES.includes(contentType)) {
+    throw new Error("Profile photo must be a JPEG, PNG, WebP, or AVIF image.");
+  }
+  if (bytes.byteLength > MAX_PROFILE_PHOTO_BYTES) throw new Error("Profile photo is larger than 5MB.");
+
+  await ensureProfilePhotoBucket(client);
+
+  const path = profilePhotoPath(owner, contentType);
+  const { error } = await client.storage.from(PROFILE_PHOTO_BUCKET).upload(path, bytes, {
+    contentType,
+    upsert: true,
+  });
+  if (error) throw error;
+
+  const { data } = client.storage.from(PROFILE_PHOTO_BUCKET).getPublicUrl(path);
+  return { path, publicUrl: data.publicUrl };
+}
+
 export async function storeProfilePhotoFromUrl(
   client: SupabaseClient<Database>,
   rawUrl: string,
@@ -86,15 +123,5 @@ export async function storeProfilePhotoFromUrl(
   if (!contentType.startsWith("image/")) throw new Error("URL did not return an image.");
 
   const bytes = await response.arrayBuffer();
-  if (bytes.byteLength > MAX_PROFILE_PHOTO_BYTES) throw new Error("Profile photo is larger than 5MB.");
-
-  const path = profilePhotoPath(owner, contentType);
-  const { error } = await client.storage.from(PROFILE_PHOTO_BUCKET).upload(path, bytes, {
-    contentType,
-    upsert: true,
-  });
-  if (error) throw error;
-
-  const { data } = client.storage.from(PROFILE_PHOTO_BUCKET).getPublicUrl(path);
-  return { path, publicUrl: data.publicUrl };
+  return storeProfilePhotoBytes(client, bytes, contentType, owner);
 }

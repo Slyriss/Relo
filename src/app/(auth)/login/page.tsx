@@ -111,6 +111,9 @@ export default function LoginPage() {
             <Button variant="outline" onClick={googleOAuth}>
               Continue with Google
             </Button>
+            <p className="-mt-2 text-xs text-muted-foreground">
+              Google sign-in can use your Google name, email, and profile photo for your Relo profile.
+            </p>
             <div className="rounded-lg border bg-muted/30 p-3">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Seeded demo accounts</p>
               <div className="mt-3 grid gap-2">

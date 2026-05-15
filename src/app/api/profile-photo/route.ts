@@ -14,6 +14,17 @@ const inputSchema = z.object({
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function updateStoredPhoto(client: ReturnType<typeof createSupabaseAdminClient>, ownerType: "attendee" | "user", ownerId: string, photoUrl: string) {
+  if (!client) return;
+  const table = ownerType === "attendee" ? "attendees" : "users";
+  const { error } = await client.from(table).update({ photo_url: photoUrl }).eq("id", ownerId);
+  if (error) throw error;
+
+  if (ownerType === "user") {
+    await client.from("attendees").update({ photo_url: photoUrl }).eq("user_id", ownerId);
+  }
+}
+
 export async function POST(request: Request) {
   const guarded = guardPost(request, "profile-photo", 10, 60_000);
   if (guarded) return guarded;
@@ -70,9 +81,7 @@ export async function POST(request: Request) {
       id: parsed.data.ownerId,
     });
 
-    const table = parsed.data.ownerType === "attendee" ? "attendees" : "users";
-    const { error } = await client.from(table).update({ photo_url: stored.publicUrl }).eq("id", parsed.data.ownerId);
-    if (error) throw error;
+    await updateStoredPhoto(client, parsed.data.ownerType, parsed.data.ownerId, stored.publicUrl);
 
     return NextResponse.json({ photoUrl: stored.publicUrl, path: stored.path });
   } catch (error) {

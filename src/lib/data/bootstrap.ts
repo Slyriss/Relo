@@ -6,10 +6,36 @@ import type { Database } from "@/types/database";
 
 type Client = any;
 
+function providerProfilePhotoUrl(authUser: SupabaseUser) {
+  const metadata = authUser.user_metadata ?? {};
+  const value = metadata.avatar_url ?? metadata.picture;
+  return typeof value === "string" && value.startsWith("https://") ? value : null;
+}
+
+async function syncProviderProfile(client: Client, authUser: SupabaseUser, row: Database["public"]["Tables"]["users"]["Row"]) {
+  const updates: Database["public"]["Tables"]["users"]["Update"] = {};
+  const providerPhotoUrl = providerProfilePhotoUrl(authUser);
+  const providerName = typeof authUser.user_metadata?.name === "string" ? authUser.user_metadata.name : null;
+
+  if (!row.photo_url && providerPhotoUrl) updates.photo_url = providerPhotoUrl;
+  if ((!row.name || row.name === row.email) && providerName) updates.name = providerName;
+
+  if (!Object.keys(updates).length) return row;
+
+  const { data, error } = await client.from("users").update(updates).eq("id", authUser.id).select("*").single();
+  if (error) throw error;
+
+  if (updates.photo_url) {
+    await client.from("attendees").update({ photo_url: updates.photo_url }).eq("user_id", authUser.id);
+  }
+
+  return data;
+}
+
 export async function ensureUserProfile(client: Client, authUser: SupabaseUser): Promise<User> {
   const existing = await client.from("users").select("*").eq("id", authUser.id).maybeSingle();
   if (existing.error) throw existing.error;
-  if (existing.data) return mapDbUser(existing.data);
+  if (existing.data) return mapDbUser(await syncProviderProfile(client, authUser, existing.data));
 
   const { data, error } = await client
     .from("users")
@@ -17,6 +43,7 @@ export async function ensureUserProfile(client: Client, authUser: SupabaseUser):
       id: authUser.id,
       email: authUser.email ?? "",
       name: authUser.user_metadata?.name ?? authUser.email ?? "New user",
+      photo_url: providerProfilePhotoUrl(authUser),
       role: "attendee",
     })
     .select("*")

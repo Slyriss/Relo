@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { CrawledProfile, ProfileVisibility } from "@/types";
@@ -183,6 +184,11 @@ export default function SetupPage() {
                     className="pl-9"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Profile photo</label>
+                <ProfilePhotoUploader ownerId={user.id} />
               </div>
 
               <div className="space-y-1.5">

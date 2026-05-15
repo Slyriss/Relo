@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ProfileFieldToggle } from "@/components/profile-field-toggle";
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { ProfileVisibility } from "@/types";
@@ -195,6 +196,10 @@ export default function ProfileSettingsPage() {
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
+          <ProfilePhotoUploader ownerId={user.id} />
+          <div className="relative py-1 text-center text-xs uppercase text-muted-foreground">
+            <span className="bg-card px-2">or use a consented image URL</span>
+          </div>
           <div className="flex gap-2">
             <Input
               value={photoInput}

@@ -66,6 +66,9 @@ export default function SignupPage() {
           <Button variant="outline" onClick={googleOAuth}>
             Continue with Google
           </Button>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Google sign-up can use your Google name, email, and profile photo for your Relo profile.
+          </p>
           <p className="text-center text-sm text-muted-foreground">
             Already have an account? <Link href="/login" className="text-primary">Sign in</Link>
           </p>

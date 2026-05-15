@@ -3,6 +3,7 @@ import { listCheckIns, listMeetingRequests } from "@/lib/data/engagement";
 import { listEvents } from "@/lib/data/events";
 import { listMeetings } from "@/lib/data/meetings";
 import { filterWorkspaceForRole } from "@/lib/auth/roles";
+import { ensureUserProfile } from "@/lib/data/bootstrap";
 import { mapDbOrganization, mapDbUser } from "@/lib/data/mappers";
 import type { Attendee, CheckIn, Event, Meeting, MeetingRequest, Organization, User } from "@/types";
 import type { Database } from "@/types/database";
@@ -39,19 +40,8 @@ export async function loadWorkspace(client: Client): Promise<WorkspaceData> {
   if (orgResult.error) throw orgResult.error;
 
   let user = userResult.data ? mapDbUser(userResult.data) : null;
-  if (authUser && !user) {
-    const { data, error } = await client
-      .from("users")
-      .insert({
-        id: authUser.id,
-        email: authUser.email ?? "",
-        name: authUser.user_metadata?.name ?? authUser.email ?? "New user",
-        role: "attendee",
-      })
-      .select("*")
-      .single();
-    if (error) throw error;
-    user = mapDbUser(data);
+  if (authUser) {
+    user = await ensureUserProfile(client, authUser);
   }
 
   return filterWorkspaceForRole({
