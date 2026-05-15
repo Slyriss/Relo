@@ -60,6 +60,7 @@ export function mapDbAttendee(row: Tables<"attendees">): Attendee {
   return {
     id: row.id,
     eventId: row.event_id,
+    userId: row.user_id ?? undefined,
     name: row.name,
     email: row.email,
     company: row.company ?? "",

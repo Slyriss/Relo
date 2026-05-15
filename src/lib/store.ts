@@ -288,10 +288,11 @@ export function useEventAttendees(eventId: string) {
 
 export function useCurrentEventAttendee(eventId: string) {
   return useAppStore((state) => {
+    if (state.user?.role !== "attendee") return undefined;
     const eventAttendees = state.attendees.filter((attendee) => attendee.eventId === eventId);
     const userEmail = state.user?.email.toLowerCase();
     return userEmail
-      ? eventAttendees.find((attendee) => attendee.email.toLowerCase() === userEmail)
+      ? eventAttendees.find((attendee) => attendee.userId === state.user?.id || attendee.email.toLowerCase() === userEmail)
       : undefined;
   });
 }

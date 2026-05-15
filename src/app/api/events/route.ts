@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { ensureOrganization, ensureUserProfile } from "@/lib/data/bootstrap";
+import { requireAdminUser } from "@/lib/auth/server";
+import { ensureOrganization } from "@/lib/data/bootstrap";
 import { insertEvent } from "@/lib/data/events";
 import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -24,13 +25,12 @@ export async function POST(request: Request) {
   const client = await createSupabaseServerClient();
   if (!client) return NextResponse.json({ error: "Supabase is not configured" }, { status: 503 });
 
-  const { data: auth } = await client.auth.getUser();
-  if (!auth.user) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  const auth = await requireAdminUser(client);
+  if (!auth.context) return auth.response;
 
   try {
     const body = eventSchema.parse(await readJsonBody(request));
-    const user = await ensureUserProfile(client, auth.user);
-    const organization = await ensureOrganization(client, user);
+    const organization = await ensureOrganization(client, auth.context.user);
     const event = await insertEvent(client, { ...body, organizationId: organization.id });
     return NextResponse.json({ event });
   } catch (error) {

@@ -33,7 +33,7 @@ export function AdminRouteGuard({ children }: { children: ReactNode }) {
             <ShieldCheck className="h-4 w-4 text-emerald-600" />
             Checking workspace access
           </div>
-          <p className="mt-1">Admin tools are only available to organizers and admins.</p>
+          <p className="mt-1">Opening the right workspace for this account.</p>
         </div>
       </main>
     );

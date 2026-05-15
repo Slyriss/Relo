@@ -2,6 +2,7 @@ import { listAttendees } from "@/lib/data/attendees";
 import { listCheckIns, listMeetingRequests } from "@/lib/data/engagement";
 import { listEvents } from "@/lib/data/events";
 import { listMeetings } from "@/lib/data/meetings";
+import { filterWorkspaceForRole } from "@/lib/auth/roles";
 import { mapDbOrganization, mapDbUser } from "@/lib/data/mappers";
 import type { Attendee, CheckIn, Event, Meeting, MeetingRequest, Organization, User } from "@/types";
 import type { Database } from "@/types/database";
@@ -45,7 +46,7 @@ export async function loadWorkspace(client: Client): Promise<WorkspaceData> {
         id: authUser.id,
         email: authUser.email ?? "",
         name: authUser.user_metadata?.name ?? authUser.email ?? "New user",
-        role: "organizer",
+        role: "attendee",
       })
       .select("*")
       .single();
@@ -53,7 +54,7 @@ export async function loadWorkspace(client: Client): Promise<WorkspaceData> {
     user = mapDbUser(data);
   }
 
-  return {
+  return filterWorkspaceForRole({
     user,
     organization: orgResult.data ? mapDbOrganization(orgResult.data) : null,
     events,
@@ -61,5 +62,5 @@ export async function loadWorkspace(client: Client): Promise<WorkspaceData> {
     meetings,
     meetingRequests,
     checkIns,
-  };
+  });
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { canActAsAttendee, forbidden, requireUser } from "@/lib/auth/server";
 import { insertMeeting } from "@/lib/data/meetings";
 import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -21,11 +22,16 @@ export async function POST(request: Request) {
 
   const client = await createSupabaseServerClient();
   if (!client) return NextResponse.json({ error: "Supabase is not configured" }, { status: 503 });
-  const { data: auth } = await client.auth.getUser();
-  if (!auth.user) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  const auth = await requireUser(client);
+  if (!auth.context) return auth.response;
 
   try {
     const meeting = meetingSchema.parse(await readJsonBody(request));
+    const canLog =
+      (await canActAsAttendee(client, auth.context.user, meeting.eventId, meeting.attendeeAId)) ||
+      (await canActAsAttendee(client, auth.context.user, meeting.eventId, meeting.attendeeBId));
+    if (!canLog) return forbidden("You can only log meetings for your own attendee profile");
+
     const saved = await insertMeeting(client, { ...meeting, id: meeting.id ?? crypto.randomUUID(), createdAt: meeting.createdAt ?? new Date().toISOString() });
     return NextResponse.json({ meeting: saved });
   } catch (error) {

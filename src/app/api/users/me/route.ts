@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { requireUser } from "@/lib/auth/server";
+import { isAdminRole } from "@/lib/auth/roles";
 import { defaultVisibility } from "@/types";
 import { mapDbUser } from "@/lib/data/mappers";
 import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
@@ -32,16 +34,20 @@ export async function PATCH(request: Request) {
 
   const client = await createSupabaseServerClient();
   if (!client) return NextResponse.json({ error: "Supabase is not configured" }, { status: 503 });
-  const { data: auth } = await client.auth.getUser();
-  if (!auth.user) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  const auth = await requireUser(client);
+  if (!auth.context) return auth.response;
 
   try {
     const body = profileSchema.parse(await readJsonBody(request));
+    const requestedRole = body.role;
+    if (requestedRole && requestedRole !== auth.context.user.role && !isAdminRole(auth.context.user.role)) {
+      return NextResponse.json({ error: "Role changes require admin access" }, { status: 403 });
+    }
     const visibility = body.visibility ? { ...defaultVisibility, ...body.visibility } : undefined;
     const updates: Database["public"]["Tables"]["users"]["Update"] = {
-      email: body.email ?? auth.user.email ?? "",
+      email: body.email ?? auth.context.authUser.email ?? "",
       name: body.name,
-      role: body.role,
+      role: isAdminRole(auth.context.user.role) ? body.role : undefined,
       company: body.company,
       title: body.title,
       linkedin_url: body.linkedinUrl,
@@ -58,14 +64,14 @@ export async function PATCH(request: Request) {
     const usersTable = client.from("users") as any;
     const { data, error } = await usersTable
       .update(updates)
-      .eq("id", auth.user.id)
+      .eq("id", auth.context.authUser.id)
       .select("*")
       .maybeSingle();
 
     if (error) throw error;
     if (!data) {
       const { data: inserted, error: insertError } = await usersTable
-        .insert({ ...updates, id: auth.user.id, email: updates.email ?? auth.user.email ?? "" })
+        .insert({ ...updates, id: auth.context.authUser.id, email: updates.email ?? auth.context.authUser.email ?? "" })
         .select("*")
         .single();
       if (insertError) throw insertError;

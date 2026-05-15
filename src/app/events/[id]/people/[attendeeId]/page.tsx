@@ -165,7 +165,7 @@ export default function AttendeeProfilePage({ params }: { params: Promise<{ id: 
                 <Badge className="border text-muted-foreground">L{target.seniority}</Badge>
               ) : null}
             </div>
-            {target.linkedinUrl ? (
+            {isSelf && target.linkedinUrl ? (
               <Button asChild size="sm" variant="outline" className="mt-4">
                 <a href={target.linkedinUrl} target="_blank" rel="noopener noreferrer">
                   Public profile <ExternalLink className="h-3.5 w-3.5" />
@@ -242,7 +242,7 @@ export default function AttendeeProfilePage({ params }: { params: Promise<{ id: 
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase text-muted-foreground">Email</p>
-                <p className="mt-1">{target.email}</p>
+                <p className="mt-1">{isSelf ? target.email : "Hidden by attendee"}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase text-muted-foreground">Goals</p>

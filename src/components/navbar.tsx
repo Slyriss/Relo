@@ -21,13 +21,17 @@ export function Navbar() {
   const participantEvent = isAttendee
     ? events.find((event) =>
         attendees.some(
-          (attendee) => attendee.eventId === event.id && attendee.email.toLowerCase() === user.email.toLowerCase()
+          (attendee) =>
+            attendee.eventId === event.id &&
+            (attendee.userId === user.id || attendee.email.toLowerCase() === user.email.toLowerCase())
         )
       ) ?? events[0]
     : undefined;
   const participantAttendee = participantEvent
     ? attendees.find(
-        (attendee) => attendee.eventId === participantEvent.id && attendee.email.toLowerCase() === user?.email.toLowerCase()
+        (attendee) =>
+          attendee.eventId === participantEvent.id &&
+          (attendee.userId === user?.id || attendee.email.toLowerCase() === user?.email.toLowerCase())
       )
     : undefined;
   const appHref = isAttendee

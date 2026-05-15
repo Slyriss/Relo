@@ -80,6 +80,7 @@ export type Event = {
 export type Attendee = {
   id: string;
   eventId: string;
+  userId?: string;
   name: string;
   email: string;
   company: string;

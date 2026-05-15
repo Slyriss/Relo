@@ -60,6 +60,7 @@ export default function SetupPage() {
   // Step 0 state
   const [name, setName] = useState(user?.name ?? "");
   const [role, setRole] = useState<"attendee" | "organizer">(user?.role === "organizer" ? "organizer" : "attendee");
+  const canChooseOrganizer = user?.role === "organizer" || user?.role === "admin";
 
   // Step 1 state
   const [linkedinUrl, setLinkedinUrl] = useState("");
@@ -72,7 +73,7 @@ export default function SetupPage() {
   const visibility = user?.visibility;
 
   async function handleStep0() {
-    updateUser({ name: name.trim(), role });
+    updateUser({ name: name.trim(), role: canChooseOrganizer ? role : "attendee" });
     setStep(1);
   }
 
@@ -114,7 +115,8 @@ export default function SetupPage() {
   }
 
   function handleComplete() {
-    if (role === "attendee") {
+    const resolvedRole = canChooseOrganizer ? role : "attendee";
+    if (resolvedRole === "attendee") {
       const event = events[0];
       router.push(event ? `/events/${event.id || event.slug}` : "/login");
       return;
@@ -186,21 +188,28 @@ export default function SetupPage() {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">I&apos;m joining as</label>
                 <div className="grid grid-cols-2 gap-3">
-                  {ROLE_OPTIONS.map((opt) => (
+                  {ROLE_OPTIONS.map((opt) => {
+                    const disabled = opt.value === "organizer" && !canChooseOrganizer;
+                    return (
                     <button
                       key={opt.value}
-                      onClick={() => setRole(opt.value)}
+                      onClick={() => !disabled && setRole(opt.value)}
+                      disabled={disabled}
                       className={cn(
                         "rounded-xl border p-3 text-left transition",
                         role === opt.value
                           ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : disabled
+                            ? "cursor-not-allowed opacity-50"
                           : "hover:border-border/80 hover:bg-muted/40"
                       )}
                     >
                       <p className="text-sm font-semibold">{opt.label}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{opt.desc}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {disabled ? "Organizer access is invite-only" : opt.desc}
+                      </p>
                     </button>
-                  ))}
+                  )})}
                 </div>
               </div>
 

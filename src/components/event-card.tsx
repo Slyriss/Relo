@@ -38,13 +38,8 @@ export function EventCard({ event }: { event: Event }) {
           </span>
         </div>
         <div className="flex gap-2">
-          {!isPast ? (
-            <Button asChild size="sm">
-              <Link href={`/dashboard/events/${event.id}`}>Manage</Link>
-            </Button>
-          ) : null}
-          <Button asChild size="sm" variant={isPast ? "default" : "outline"}>
-            <Link href={`/events/${event.id}`}>{isPast ? "View recap" : "Attendee view"}</Link>
+          <Button asChild size="sm">
+            <Link href={`/dashboard/events/${event.id}`}>{isPast ? "View report" : "Manage"}</Link>
           </Button>
         </div>
       </CardContent>

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { canActAsAttendee, forbidden, getMeetingRequestActors, requireAdminUser, requireUser } from "@/lib/auth/server";
+import { isAdminRole } from "@/lib/auth/roles";
 import { deleteMeetingRequest, updateMeetingRequestStatus, upsertMeetingRequest } from "@/lib/data/engagement";
 import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -18,20 +20,26 @@ const requestSchema = z.object({
 async function authedClient() {
   const client = await createSupabaseServerClient();
   if (!client) return { client: null, response: NextResponse.json({ error: "Supabase is not configured" }, { status: 503 }) };
-  const { data: auth } = await client.auth.getUser();
-  if (!auth.user) return { client: null, response: NextResponse.json({ error: "Sign in required" }, { status: 401 }) };
-  return { client, response: null };
+  const auth = await requireUser(client);
+  if (!auth.context) return { client: null, context: null, response: auth.response };
+  return { client, context: auth.context, response: null };
 }
 
 export async function POST(request: Request) {
   const guarded = guardPost(request, "meeting-requests", 80, 60_000);
   if (guarded) return guarded;
 
-  const { client, response } = await authedClient();
+  const { client, context, response } = await authedClient();
   if (!client) return response;
 
   try {
     const body = requestSchema.parse(await readJsonBody(request));
+    if (!isAdminRole(context.user.role) && body.status !== "pending") {
+      return forbidden("Only admins can facilitate meeting requests");
+    }
+    if (!(await canActAsAttendee(client, context.user, body.eventId, body.requesterId))) {
+      return forbidden("You can only request meetings from your own attendee profile");
+    }
     const meetingRequest = await upsertMeetingRequest(client, body);
     return NextResponse.json({ meetingRequest });
   } catch (error) {
@@ -41,8 +49,10 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const { client, response } = await authedClient();
-  if (!client) return response;
+  const client = await createSupabaseServerClient();
+  if (!client) return NextResponse.json({ error: "Supabase is not configured" }, { status: 503 });
+  const auth = await requireAdminUser(client);
+  if (!auth.context) return auth.response;
 
   const schema = z.object({ id: z.string().min(1), status: z.enum(["pending", "facilitated"]) });
   try {
@@ -55,11 +65,16 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { client, response } = await authedClient();
+  const { client, context, response } = await authedClient();
   if (!client) return response;
 
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+  const actors = await getMeetingRequestActors(client, id);
+  if (!actors) return NextResponse.json({ error: "Meeting request not found" }, { status: 404 });
+  if (!isAdminRole(context.user.role) && !(await canActAsAttendee(client, context.user, actors.eventId, actors.requesterId))) {
+    return forbidden("You can only remove your own meeting requests");
+  }
   await deleteMeetingRequest(client, id);
   return NextResponse.json({ ok: true });
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowRight, Bookmark, CheckCircle2, Network, Sparkles, UserRoundX } from "lucide-react";
+import { use } from "react";
+import { ArrowRight, Bookmark, CheckCircle2, Sparkles, UserRoundX } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CsvUploadDropzone } from "@/components/csv-upload-dropzone";
 import { ProfilePasteImport } from "@/components/profile-paste-import";
@@ -9,16 +9,16 @@ import { ExportActions } from "@/components/export-actions";
 import { QrBadgeCard } from "@/components/qr-badge-card";
 import { StatCard } from "@/components/stat-card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getConnectorStats, getOrganizerIntroRecommendations, getUnmatchedAttendees } from "@/lib/analytics";
 import { buildSponsorCsv } from "@/lib/exports";
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore, useEvent } from "@/lib/store";
 
-export default function EventDetailPage({ params }: { params: { id: string } }) {
-  const event = useEvent(params.id);
-  const eventId = event?.id ?? params.id;
+export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const event = useEvent(id);
+  const eventId = event?.id ?? id;
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
   const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === eventId)));
   const meetingRequests = useAppStore(useShallow((s) => s.meetingRequests.filter((r) => r.eventId === eventId)));
@@ -50,15 +50,6 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         </div>
         <div className="flex flex-wrap gap-2">
           <ExportActions csv={sponsorCsv} filename={`${event.slug}-sponsor-report.csv`} pdfLabel="Sponsor PDF" />
-          <Button asChild variant="outline">
-            <Link href={`/events/${event.id}/graph`}>
-              <Network className="h-4 w-4" />
-              Connections
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href={`/events/${event.id}`}>Open attendee view</Link>
-          </Button>
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">

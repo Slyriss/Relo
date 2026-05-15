@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { attendeePayloadSchema } from "@/lib/ai/schemas";
+import { requireAdminUser } from "@/lib/auth/server";
 import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
 import { scanAttendeeEnrichment } from "@/lib/data/enrichment";
 import type { EnrichmentPersistenceClient } from "@/lib/data/enrichment";
@@ -36,6 +37,13 @@ export async function POST(request: Request) {
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "attendees are required" }, { status: 400 });
+  }
+
+  if (parsed.data.persist) {
+    const authClient = await createSupabaseServerClient();
+    if (!authClient) return NextResponse.json({ error: "Supabase is not configured" }, { status: 503 });
+    const auth = await requireAdminUser(authClient);
+    if (!auth.context) return auth.response;
   }
 
   const client = parsed.data.persist ? await optionalServerClient() : null;

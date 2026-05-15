@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { requireAdminUser } from "@/lib/auth/server";
 import { insertAttendees } from "@/lib/data/attendees";
 import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -31,8 +32,8 @@ export async function POST(request: Request) {
 
   const client = await createSupabaseServerClient();
   if (!client) return NextResponse.json({ error: "Supabase is not configured" }, { status: 503 });
-  const { data: auth } = await client.auth.getUser();
-  if (!auth.user) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  const auth = await requireAdminUser(client);
+  if (!auth.context) return auth.response;
 
   try {
     const body = bodySchema.parse(await readJsonBody(request, 750_000));

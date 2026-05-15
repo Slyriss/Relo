@@ -17,7 +17,7 @@ export async function ensureUserProfile(client: Client, authUser: SupabaseUser):
       id: authUser.id,
       email: authUser.email ?? "",
       name: authUser.user_metadata?.name ?? authUser.email ?? "New user",
-      role: "organizer",
+      role: "attendee",
     })
     .select("*")
     .single();
