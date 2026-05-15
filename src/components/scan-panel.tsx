@@ -15,8 +15,8 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
   const logMeeting = useAppStore((state) => state.logMeeting);
   const current = useCurrentEventAttendee(eventId);
   const availableTargets = useMemo(
-    () => attendees.filter((attendee) => attendee.id !== current?.id),
-    [attendees, current?.id]
+    () => (current ? attendees.filter((attendee) => attendee.id !== current.id) : []),
+    [attendees, current]
   );
   const [targetId, setTargetId] = useState("");
   const [status, setStatus] = useState("");
@@ -38,10 +38,11 @@ export function ScanPanel({ eventId, scannedAttendeeId }: { eventId: string; sca
   const target = useMemo(() => attendees.find((attendee) => attendee.id === targetId), [attendees, targetId]);
 
   useEffect(() => {
+    if (!current) return;
     const scannedTarget = availableTargets.find((attendee) => attendee.id === scannedAttendeeId);
     const currentTargetStillValid = availableTargets.some((attendee) => attendee.id === targetId);
     if (!currentTargetStillValid) setTargetId(scannedTarget?.id ?? availableTargets[0]?.id ?? "");
-  }, [availableTargets, scannedAttendeeId, targetId]);
+  }, [availableTargets, current, scannedAttendeeId, targetId]);
 
   useEffect(() => {
     const sync = () =>

@@ -59,6 +59,7 @@ export default function ProfileSettingsPage() {
   if (!user) return null;
 
   const visibility = user.visibility;
+  const isOperatorProfile = user.role === "organizer" || user.role === "admin";
 
   const profileCompletionFields = [
     !!user.company,
@@ -309,7 +310,9 @@ export default function ProfileSettingsPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Your Information</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Toggle the visibility of each field to control what event attendees can see.
+            {isOperatorProfile
+              ? "Maintain the operator profile used across the admin workspace."
+              : "Toggle the visibility of each field to control what event attendees can see."}
           </p>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -413,7 +416,7 @@ export default function ProfileSettingsPage() {
             <div>
               <CardTitle className="text-base">Bio</CardTitle>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                Shown on your attendee card and profile page.
+                {isOperatorProfile ? "Used for your admin workspace identity." : "Shown on your attendee card and profile page."}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">

@@ -12,12 +12,13 @@ import { Button } from "@/components/ui/button";
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore, useCurrentEventAttendee, useEvent, useRecommendations } from "@/lib/store";
 import { GOAL_COLOR } from "@/lib/graph";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeDisplayText } from "@/lib/utils";
 
 export default function EventHomePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const event = useEvent(id);
   const eventId = event?.id ?? id;
+  const events = useAppStore(useShallow((state) => state.events));
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
   const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === eventId)));
   const viewer = useCurrentEventAttendee(eventId);
@@ -51,10 +52,14 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
 
   if (!event) return <main className="p-6">Event not found.</main>;
 
+  const eventTitle = sanitizeDisplayText(event.title, "Event title needs review");
+  const eventDescription = sanitizeDisplayText(event.description, "Description needs review");
+  const eventVenue = sanitizeDisplayText(event.venue, "Venue needs review");
+
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 pb-28 sm:px-6">
 
-      <EventSwitcher currentEventId={id} />
+      {events.length > 1 ? <EventSwitcher currentEventId={id} /> : null}
 
       {/* Check-in bar */}
       <div className="flex items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3">
@@ -98,11 +103,16 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      <section className="rounded-2xl bg-foreground p-6 text-background sm:p-8">
+      <section
+        className="overflow-hidden rounded-2xl bg-cover bg-center p-6 text-background sm:p-8"
+        style={{
+          backgroundImage: "linear-gradient(90deg, rgba(24,20,15,.92), rgba(24,20,15,.62)), url('/relo-assets/event-hero-default.png')",
+        }}
+      >
         <div className="max-w-2xl">
-          <div className="text-sm opacity-70">{event.venue}</div>
-          <h1 className="mt-3 text-4xl font-semibold tracking-normal">{event.title}</h1>
-          <p className="mt-3 text-background/75">{event.description}</p>
+          <div className="break-words text-sm opacity-70">{eventVenue}</div>
+          <h1 className="mt-3 break-words text-4xl font-semibold tracking-normal">{eventTitle}</h1>
+          <p className="mt-3 break-words text-background/75">{eventDescription}</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button asChild>
               <Link href={`/events/${event.id}/matches`}>

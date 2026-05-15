@@ -14,4 +14,5 @@ test-results/
 # Local tooling artifacts
 .claude/
 .visual-qa/
+supabase/.temp/
 tsconfig.tsbuildinfo

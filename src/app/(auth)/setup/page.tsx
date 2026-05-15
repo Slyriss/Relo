@@ -187,8 +187,8 @@ export default function SetupPage() {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">I&apos;m joining as</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {ROLE_OPTIONS.map((opt) => {
+                <div className={cn("grid gap-3", canChooseOrganizer ? "grid-cols-2" : "grid-cols-1")}>
+                  {ROLE_OPTIONS.filter((opt) => opt.value === "attendee" || canChooseOrganizer).map((opt) => {
                     const disabled = opt.value === "organizer" && !canChooseOrganizer;
                     return (
                     <button

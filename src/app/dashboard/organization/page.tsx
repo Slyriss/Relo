@@ -43,7 +43,7 @@ export default function OrganizationPage() {
                 <Badge className="border-primary/30 text-primary capitalize">{user.role}</Badge>
               </div>
             ) : null}
-            <p className="text-xs text-muted-foreground">Invite additional organizers via Supabase Auth when connected to a live project.</p>
+            <p className="text-xs text-muted-foreground">Invite additional workspace operators from your production identity provider.</p>
           </CardContent>
         </Card>
 
@@ -73,7 +73,7 @@ export default function OrganizationPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>Owners can create events, import attendees, view organizer analytics, and access event-level meeting notes.</p>
-            <p>Row-level security policies in Supabase ensure organizers only see data for their own organization. Attendees only see their own profile and matches.</p>
+            <p>Workspace access policies keep operators scoped to their organization. Participants only see their own profile, event, matches, and meeting actions.</p>
           </CardContent>
         </Card>
       </div>

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getConnectorStats, getOrganizerIntroRecommendations, getUnmatchedAttendees } from "@/lib/analytics";
 import { buildSponsorCsv } from "@/lib/exports";
+import { sanitizeDisplayText } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore, useEvent } from "@/lib/store";
 
@@ -34,6 +35,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const unmatched = getUnmatchedAttendees(attendees, meetings);
   const intros = getOrganizerIntroRecommendations(attendees);
   const sponsorCsv = buildSponsorCsv(event, attendees, meetings);
+  const eventTitle = sanitizeDisplayText(event.title, "Event title needs review");
+  const eventDescription = sanitizeDisplayText(event.description, "Description needs review");
   const chart = [
     { name: "Invited", value: attendees.length },
     { name: "Complete", value: completed },
@@ -45,8 +48,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     <div className="space-y-8">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <h1 className="text-3xl font-semibold tracking-normal">{event.title}</h1>
-          <p className="mt-1 text-muted-foreground">{event.description}</p>
+          <h1 className="max-w-4xl break-words text-3xl font-semibold tracking-normal">{eventTitle}</h1>
+          <p className="mt-1 max-w-4xl break-words text-muted-foreground">{eventDescription}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ExportActions csv={sponsorCsv} filename={`${event.slug}-sponsor-report.csv`} pdfLabel="Sponsor PDF" />
@@ -81,9 +84,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 <div key={req.id} className="flex items-center gap-3 rounded-xl border bg-background px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">
-                      {requester.name}
+                      <span className="break-words">{requester.name}</span>
                       <span className="mx-1.5 text-muted-foreground">wants to meet</span>
-                      {target.name}
+                      <span className="break-words">{target.name}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">{requester.company} · {target.company}</p>
                     {req.note && <p className="mt-1 text-xs text-muted-foreground italic">&ldquo;{req.note}&rdquo;</p>}

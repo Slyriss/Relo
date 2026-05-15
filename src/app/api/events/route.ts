@@ -8,15 +8,29 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const eventSchema = z.object({
-  title: z.string().trim().min(1).max(180),
-  slug: z.string().trim().min(1).max(180),
-  description: z.string().trim().max(2000).default(""),
-  venue: z.string().trim().max(240).default(""),
-  startsAt: z.string().datetime(),
-  endsAt: z.string().datetime(),
-  status: z.enum(["draft", "published"]).default("draft"),
-});
+const unsafeControlText = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/;
+const eventText = (max: number, min = 0) =>
+  z
+    .string()
+    .trim()
+    .min(min)
+    .max(max)
+    .refine((value) => !unsafeControlText.test(value), "Remove unsupported control characters.");
+
+const eventSchema = z
+  .object({
+    title: eventText(120, 1),
+    slug: z.string().trim().min(1).max(140).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use a valid event slug."),
+    description: eventText(1200).default(""),
+    venue: eventText(160).default(""),
+    startsAt: z.string().datetime(),
+    endsAt: z.string().datetime(),
+    status: z.enum(["draft", "published"]).default("draft"),
+  })
+  .refine((event) => new Date(event.endsAt).getTime() > new Date(event.startsAt).getTime(), {
+    path: ["endsAt"],
+    message: "The event end time must be after the start time.",
+  });
 
 export async function POST(request: Request) {
   const guarded = guardPost(request, "events", 30, 60_000);
@@ -35,6 +49,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ event });
   } catch (error) {
     const status = error instanceof RequestBodyError ? error.status : error instanceof z.ZodError ? 400 : 500;
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not create event" }, { status });
+    const message =
+      error instanceof z.ZodError
+        ? error.issues[0]?.message ?? "Check the event details and try again."
+        : error instanceof RequestBodyError
+          ? error.message
+          : "Could not create event";
+    return NextResponse.json({ error: message }, { status });
   }
 }

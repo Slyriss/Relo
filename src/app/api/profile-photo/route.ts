@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (attendeeError) {
-      return NextResponse.json({ error: attendeeError.message }, { status: 500 });
+      return NextResponse.json({ error: "Could not verify profile ownership" }, { status: 500 });
     }
     if (!attendee) return NextResponse.json({ error: "Attendee not found" }, { status: 404 });
     if (attendee.user_id !== authUser.id) {
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ photoUrl: stored.publicUrl, path: stored.path });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Could not store profile photo" },
+      { error: "Could not store profile photo. Use a direct public image URL you have permission to store." },
       { status: 500 }
     );
   }

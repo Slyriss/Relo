@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
-import { Loader2, Radio, Sparkles, Target } from "lucide-react";
+import { Loader2, Radio, Rows3, Target } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { TopRecommendedPeople } from "@/components/enrichment";
 import { MatchCard } from "@/components/match-card";
@@ -48,7 +48,7 @@ export default function MatchesPage({ params }: { params: Promise<{ id: string }
     setDismissed((prev) => new Set([...prev, targetId]));
   }
 
-  async function generateMore() {
+  async function showMoreMatches() {
     setLoadingMore(true);
     await new Promise((r) => setTimeout(r, 800));
     setVisible((v) => v + BATCH_SIZE);
@@ -114,11 +114,11 @@ export default function MatchesPage({ params }: { params: Promise<{ id: string }
       {remaining > 0 ? (
         <div className="flex flex-col items-center gap-2 pt-2">
           <p className="text-sm text-muted-foreground">{remaining} more matches available</p>
-          <Button variant="outline" onClick={generateMore} disabled={loadingMore} className="gap-2">
+          <Button variant="outline" onClick={showMoreMatches} disabled={loadingMore} className="gap-2">
             {loadingMore ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Finding more…</>
+              <><Loader2 className="h-4 w-4 animate-spin" /> Loading matches...</>
             ) : (
-              <><Sparkles className="h-4 w-4" /> Generate more</>
+              <><Rows3 className="h-4 w-4" /> Show more matches</>
             )}
           </Button>
         </div>

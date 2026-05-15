@@ -59,6 +59,7 @@ export function buildSponsorCsv(event: Event, attendees: Attendee[], meetings: M
 }
 
 function escapeCsvCell(value: string) {
-  if (/[",\n\r]/.test(value)) return `"${value.replaceAll('"', '""')}"`;
-  return value;
+  const safeValue = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  if (/[",\n\r]/.test(safeValue)) return `"${safeValue.replaceAll('"', '""')}"`;
+  return safeValue;
 }

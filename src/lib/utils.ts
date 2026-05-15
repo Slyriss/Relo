@@ -29,6 +29,17 @@ export function slugify(value: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+export function sanitizeDisplayText(value: string, fallback = "Needs review") {
+  const normalized = value
+    .replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) return fallback;
+  if (/[<>]|javascript:|onerror|onload|script/i.test(normalized)) return fallback;
+  return normalized;
+}
+
 export function initials(name: string) {
   return name
     .split(" ")
