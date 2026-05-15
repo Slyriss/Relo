@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
 import Link from "next/link";
 import { BrainCircuit, ExternalLink, FileSearch, Globe2, Linkedin, Loader2, Newspaper, Search, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,45 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { ResearchBrief } from "@/lib/ai/provider";
-import type { PersonEnrichment } from "@/lib/enrichment";
-import type { NewsArticle } from "@/lib/news";
+import { useLookupResearchStore } from "@/lib/lookup-research-store";
 import type { ResearchSource } from "@/lib/research";
 import { cn } from "@/lib/utils";
-
-type LookupResponse = {
-  enrichment: PersonEnrichment;
-  news: NewsArticle[];
-  researchBrief: ResearchBrief;
-  sources: ResearchSource[];
-  sourceStatus: string;
-  sourceProvider: "multi" | "tinyfish" | "brave" | "submitted-only";
-  context: string | null;
-};
-
-type LookupForm = {
-  name: string;
-  email: string;
-  company: string;
-  title: string;
-  linkedinUrl: string;
-  industry: string;
-  context: string;
-  researchQuestion: string;
-  bio: string;
-};
-
-const initialForm: LookupForm = {
-  name: "",
-  email: "",
-  company: "",
-  title: "",
-  linkedinUrl: "",
-  industry: "",
-  context: "",
-  researchQuestion: "",
-  bio: "",
-};
 
 function displayDate(value?: string) {
   if (!value) return "";
@@ -62,11 +26,6 @@ function sourceIcon(type: ResearchSource["type"]) {
   if (type === "linkedin") return Linkedin;
   if (type === "news") return Newspaper;
   return Globe2;
-}
-
-function fallbackEmail(name: string) {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "target";
-  return `research-${slug}@relo.local`;
 }
 
 function ResearchAnimation() {
@@ -106,55 +65,18 @@ function ResearchAnimation() {
 }
 
 export default function LookupPage() {
-  const [form, setForm] = useState<LookupForm>(initialForm);
-  const [result, setResult] = useState<LookupResponse | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  function updateField(field: keyof LookupForm, value: string) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
+  const form = useLookupResearchStore((state) => state.form);
+  const result = useLookupResearchStore((state) => state.result);
+  const error = useLookupResearchStore((state) => state.error);
+  const loading = useLookupResearchStore((state) => state.loading);
+  const activeQuery = useLookupResearchStore((state) => state.activeQuery);
+  const completedAt = useLookupResearchStore((state) => state.completedAt);
+  const updateField = useLookupResearchStore((state) => state.updateField);
+  const runResearch = useLookupResearchStore((state) => state.runLookup);
 
   async function runLookup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
-    setError("");
-    setResult(null);
-
-    try {
-      const response = await fetch("/api/lookup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          context: form.context || undefined,
-          researchQuestion: form.researchQuestion || undefined,
-          attendee: {
-            id: `manual-${form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "lookup"}`,
-            eventId: "manual-lookup",
-            name: form.name,
-            email: form.email || fallbackEmail(form.name),
-            company: form.company,
-            title: form.title,
-            linkedinUrl: form.linkedinUrl || undefined,
-            bio: form.bio,
-            headline: form.title,
-            goals: ["learning"],
-            industry: form.industry || undefined,
-            profileComplete: true,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Research failed. Check the target name, optional URL, and public context fields.");
-      }
-
-      setResult((await response.json()) as LookupResponse);
-    } catch (lookupError) {
-      setError(lookupError instanceof Error ? lookupError.message : "Research failed.");
-    } finally {
-      setLoading(false);
-    }
+    await runResearch();
   }
 
   const linkedInSource = result?.sources.find((source) => source.type === "linkedin" && source.verified);
@@ -167,6 +89,11 @@ export default function LookupPage() {
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Query a person, company, or event context and turn live public sources into an admin intelligence brief.
           </p>
+          {loading && activeQuery ? (
+            <p className="mt-2 text-xs font-medium text-primary">Research keeps running if you open another dashboard screen: {activeQuery}</p>
+          ) : completedAt ? (
+            <p className="mt-2 text-xs text-muted-foreground">Last research completed {displayDate(completedAt)}.</p>
+          ) : null}
         </div>
         <Badge className="w-fit bg-emerald-50 text-emerald-700">Admin research</Badge>
       </div>

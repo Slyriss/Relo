@@ -28,7 +28,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden w-72 shrink-0 flex-col bg-[#101319] p-4 text-white lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-72 shrink-0 self-start flex-col bg-[#101319] p-4 text-white lg:flex">
       <Link href="/dashboard" className="mb-5 flex min-h-10 items-center gap-3 rounded-lg px-2 font-semibold">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400 text-sm font-bold text-[#101215]">
           R
@@ -47,7 +47,7 @@ export function Sidebar() {
           Build events, import attendees, watch engagement, and intervene where the room needs help.
         </p>
       </div>
-      <nav className="flex-1 space-y-1">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto pb-3">
         {items.map((item) => (
           <Link
             key={item.href}

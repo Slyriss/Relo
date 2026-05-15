@@ -62,15 +62,15 @@ export function ProfilePasteImport({ eventId }: { eventId: string }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Sparkles className="h-4 w-4 text-primary" />
-          AI profile import
+          Attendee import from text
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Paste a LinkedIn bio, resume snippet, or free-text profile. Claude extracts goals, industry, and seniority automatically.
+          Paste attendee-provided bio text, a resume snippet, or approved public profile text. AI extracts event goals, industry, and seniority for review.
         </p>
         <Textarea
-          placeholder="Paste LinkedIn summary or bio here…"
+          placeholder="Paste attendee bio or approved profile text here..."
           rows={5}
           value={text}
           onChange={(e) => { setText(e.target.value); setParsed(null); setAdded(false); }}

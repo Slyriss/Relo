@@ -6,7 +6,6 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { CsvUploadDropzone } from "@/components/csv-upload-dropzone";
 import { ProfilePasteImport } from "@/components/profile-paste-import";
 import { ExportActions } from "@/components/export-actions";
-import { QrBadgeCard } from "@/components/qr-badge-card";
 import { StatCard } from "@/components/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,22 +213,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         </Card>
         <CsvUploadDropzone eventId={event.id} />
         <ProfilePasteImport eventId={event.id} />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-        {attendees[0] ? <QrBadgeCard attendee={attendees[0]} /> : null}
-        <Card>
-          <CardHeader>
-            <CardTitle>Connector detail</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {connectors.slice(0, 5).map(({ attendee, count }) => (
-              <div key={attendee.id} className="flex items-center justify-between rounded-xl bg-muted p-3 text-sm">
-                <span>{attendee.name}</span>
-                <span className="text-muted-foreground">{count} meetings</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
