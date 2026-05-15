@@ -1,3 +1,6 @@
+import { env } from "@/lib/env";
+import { tinyFishSearch } from "@/lib/enrichment/tinyfish";
+
 export type NewsArticle = {
   title: string;
   url: string;
@@ -18,6 +21,21 @@ type GdeltArticle = {
 
 type GdeltResponse = {
   articles?: GdeltArticle[];
+};
+
+type BraveNewsResult = {
+  title?: string;
+  url?: string;
+  description?: string;
+  age?: string;
+  page_age?: string;
+  meta_url?: {
+    hostname?: string;
+  };
+};
+
+type BraveNewsResponse = {
+  results?: BraveNewsResult[];
 };
 
 function compactQuery(parts: Array<string | undefined>) {
@@ -59,6 +77,8 @@ export function buildNewsQueries(input: {
     industry?.toLowerCase() === "edtech" ? "education technology" : industry;
 
   return uniqueQueries([
+    compactQuery([input.name, input.company]),
+    compactQuery([input.name, input.company, industry]),
     buildNewsQuery(input),
     compactQuery([industry, input.context]),
     compactQuery([expandedIndustry, input.context]),
@@ -101,6 +121,54 @@ async function fetchGdeltArticles(
     }));
 }
 
+async function fetchBraveNews(query: string, fetchImpl: typeof fetch, limit: number, signal: AbortSignal): Promise<NewsArticle[]> {
+  if (!env.BRAVE_SEARCH_API_KEY) return [];
+
+  const params = new URLSearchParams({
+    q: query,
+    count: String(limit),
+    search_lang: "en",
+    freshness: "pm",
+  });
+
+  const response = await fetchImpl(`https://api.search.brave.com/res/v1/news/search?${params.toString()}`, {
+    signal,
+    headers: {
+      Accept: "application/json",
+      "Accept-Encoding": "gzip",
+      "X-Subscription-Token": env.BRAVE_SEARCH_API_KEY,
+    },
+  });
+  if (!response.ok) return [];
+
+  const data = (await response.json()) as BraveNewsResponse;
+  return (data.results ?? [])
+    .filter((article) => article.title && article.url)
+    .map((article) => ({
+      title: article.title!,
+      url: article.url!,
+      source: article.meta_url?.hostname ?? new URL(article.url!).hostname,
+      publishedAt: article.page_age ?? article.age,
+      snippet: article.description,
+    }));
+}
+
+async function fetchTinyFishNews(query: string, limit: number): Promise<NewsArticle[]> {
+  const results = await tinyFishSearch(`${query} recent news`, limit);
+  return results.map((result) => ({
+    title: result.title,
+    url: result.url,
+    source: (() => {
+      try {
+        return new URL(result.url).hostname.replace(/^www\./, "");
+      } catch {
+        return "public web";
+      }
+    })(),
+    snippet: result.snippet,
+  }));
+}
+
 export async function fetchRecentNews(
   input: {
     name?: string;
@@ -124,8 +192,30 @@ export async function fetchRecentNews(
   const limit = options.limit ?? 6;
 
   try {
-    const results = await Promise.allSettled(
-      queries.map((query) => fetchGdeltArticles(query, fetchImpl, limit, controller.signal))
+    const results: PromiseSettledResult<NewsArticle[]>[] = [];
+
+    for (const query of queries.slice(0, 3)) {
+      if (controller.signal.aborted) break;
+      results.push(await Promise.resolve(fetchBraveNews(query, fetchImpl, limit, controller.signal)).then(
+        (value) => ({ status: "fulfilled", value }) as PromiseFulfilledResult<NewsArticle[]>,
+        (reason) => ({ status: "rejected", reason }) as PromiseRejectedResult
+      ));
+      if (results.some((result) => result.status === "fulfilled" && result.value.length >= limit)) break;
+    }
+
+    for (const query of queries.slice(0, 3)) {
+      if (controller.signal.aborted) break;
+      results.push(await Promise.resolve(fetchTinyFishNews(query, limit)).then(
+        (value) => ({ status: "fulfilled", value }) as PromiseFulfilledResult<NewsArticle[]>,
+        (reason) => ({ status: "rejected", reason }) as PromiseRejectedResult
+      ));
+      if (results.some((result) => result.status === "fulfilled" && result.value.length >= limit)) break;
+    }
+
+    results.push(
+      ...(await Promise.allSettled(
+        queries.map((query) => fetchGdeltArticles(query, fetchImpl, limit, controller.signal))
+      ))
     );
     const articles = results
       .filter((result): result is PromiseFulfilledResult<NewsArticle[]> => result.status === "fulfilled")

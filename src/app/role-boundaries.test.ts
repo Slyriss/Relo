@@ -29,9 +29,11 @@ describe("multi-role admin boundary", () => {
 
   it("redirects attendees to participant event space instead of admin surfaces", () => {
     const source = sourceFor("src", "components", "admin-route-guard.tsx");
+    const navigation = sourceFor("src", "lib", "navigation.ts");
 
-    expect(source).toContain('router.replace(participantHome(events))');
-    expect(source).toContain('return event ? `/events/${event.id || event.slug}` : "/setup"');
+    expect(source).toContain("router.replace(appHomeForUser(user, events, attendees))");
+    expect(navigation).toContain('return hasLinkedEvent ? "/events" : "/setup"');
+    expect(navigation).not.toContain("?? events[0]");
   });
 
   it("keeps attendee, organizer, and admin in the shared role contract", () => {

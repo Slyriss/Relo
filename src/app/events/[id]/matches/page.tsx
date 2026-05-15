@@ -5,6 +5,7 @@ import { Loader2, Radio, Rows3, Target } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { TopRecommendedPeople } from "@/components/enrichment";
 import { MatchCard } from "@/components/match-card";
+import { NextBestPerson } from "@/components/next-best-person";
 import { Button } from "@/components/ui/button";
 import { rankEnrichedRecommendations } from "@/lib/enrichment";
 import { useAppStore, useCurrentEventAttendee, useEvent, useRecommendations } from "@/lib/store";
@@ -20,7 +21,11 @@ export default function MatchesPage({ params }: { params: Promise<{ id: string }
   const source = useCurrentEventAttendee(eventId);
   const allRecs = useRecommendations(eventId, source?.id);
   const checkIns = useAppStore(useShallow((state) => state.checkIns.filter((checkIn) => checkIn.eventId === eventId)));
+  const recommendationActions = useAppStore(useShallow((state) => state.recommendationActions.filter((action) => action.eventId === eventId)));
+  const markRecommendationAction = useAppStore((state) => state.markRecommendationAction);
+  const logMeeting = useAppStore((state) => state.logMeeting);
   const checkedInIds = new Set(checkIns.map((checkIn) => checkIn.attendeeId));
+  const actionByTarget = new Map(recommendationActions.map((action) => [action.targetId, action]));
   const roomRecs = [...allRecs].sort((a, b) => {
     const hereDelta = Number(checkedInIds.has(b.targetId)) - Number(checkedInIds.has(a.targetId));
     return hereDelta || b.score - a.score;
@@ -31,9 +36,15 @@ export default function MatchesPage({ params }: { params: Promise<{ id: string }
   const [visible, setVisible] = useState(INITIAL_COUNT);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const shown = roomRecs.filter((r) => !dismissed.has(r.targetId)).slice(0, visible);
-  const remaining = roomRecs.filter((r) => !dismissed.has(r.targetId)).length - visible;
-  const topEnriched = rankEnrichedRecommendations(attendees, roomRecs, 3);
+  const activeRecs = roomRecs.filter((recommendation) => {
+    const action = actionByTarget.get(recommendation.targetId);
+    return action?.action !== "skipped" && action?.action !== "met" && !dismissed.has(recommendation.targetId);
+  });
+  const nextBest = activeRecs.find((recommendation) => checkedInIds.has(recommendation.targetId)) ?? activeRecs[0];
+  const nextBestAttendee = nextBest ? attendees.find((attendee) => attendee.id === nextBest.targetId) : undefined;
+  const shown = activeRecs.filter((recommendation) => recommendation.targetId !== nextBest?.targetId).slice(0, visible);
+  const remaining = activeRecs.filter((recommendation) => recommendation.targetId !== nextBest?.targetId).length - visible;
+  const topEnriched = rankEnrichedRecommendations(attendees, activeRecs, 3);
 
   function handleLike(targetId: string) {
     setFeedback((prev) => ({ ...prev, [targetId]: prev[targetId] === "liked" ? undefined : "liked" }));
@@ -61,8 +72,8 @@ export default function MatchesPage({ params }: { params: Promise<{ id: string }
     <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 pb-28 sm:px-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-normal">Who to talk to next</h1>
-          <p className="mt-1 text-muted-foreground">Prioritized for the room: who is here now, what angle to use, and what follow-up to earn.</p>
+          <h1 className="text-3xl font-semibold tracking-normal">Matches</h1>
+          <p className="mt-1 text-muted-foreground">Prioritized recommendations only: who to meet, why, and how to start well.</p>
         </div>
         {likedCount > 0 && (
           <div className="shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700">
@@ -86,6 +97,28 @@ export default function MatchesPage({ params }: { params: Promise<{ id: string }
           {checkedInIds.size} here now
         </div>
       </section>
+      {event && source && nextBest && nextBestAttendee ? (
+        <NextBestPerson
+          event={event}
+          viewer={source}
+          target={nextBestAttendee}
+          match={nextBest}
+          checkIns={checkIns}
+          action={actionByTarget.get(nextBest.targetId)}
+          onAction={(action, note) =>
+            markRecommendationAction({
+              eventId,
+              viewerId: source.id,
+              targetId: nextBest.targetId,
+              action,
+              note,
+            })
+          }
+          onMeetingSave={async (meeting) => {
+            await logMeeting(meeting);
+          }}
+        />
+      ) : null}
       <TopRecommendedPeople
         recommendations={topEnriched}
         title="Top 3 to prioritize now"

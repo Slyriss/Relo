@@ -13,6 +13,10 @@ export type TinyFishFetchResult = {
   text?: string;
 };
 
+type TinyFishFetchResponse = {
+  results?: TinyFishFetchResult[];
+};
+
 export function tinyFishAvailable() {
   return Boolean(env.TINYFISH_API_KEY);
 }
@@ -21,7 +25,7 @@ export async function tinyFishSearch(query: string, limit = 5): Promise<TinyFish
   if (!env.TINYFISH_API_KEY) return [];
 
   const url = new URL("https://api.search.tinyfish.ai/");
-  url.searchParams.set("q", query);
+  url.searchParams.set("query", query);
   url.searchParams.set("limit", String(limit));
 
   const response = await fetch(url, {
@@ -42,9 +46,10 @@ export async function tinyFishFetch(url: string): Promise<TinyFishFetchResult | 
       "Content-Type": "application/json",
       "X-API-Key": env.TINYFISH_API_KEY,
     },
-    body: JSON.stringify({ url, format: "markdown" }),
+    body: JSON.stringify({ urls: [url], format: "markdown" }),
   });
   if (!response.ok) throw new Error(`TinyFish Fetch failed: ${response.status}`);
 
-  return (await response.json()) as TinyFishFetchResult;
+  const body = (await response.json()) as TinyFishFetchResponse;
+  return body.results?.[0] ?? null;
 }

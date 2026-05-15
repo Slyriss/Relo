@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { Eye, EyeOff, LogOut, Settings, User } from "lucide-react";
+import { Eye, EyeOff, Home, LogOut, QrCode, Settings, Sparkles, User, Users } from "lucide-react";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { useAppStore, useCurrentEventAttendee, useEvent } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -26,11 +26,18 @@ export function EventNavbar({ eventId }: { eventId: string }) {
   const logout      = useAppStore((s) => s.logout);
   const setVisibility = useAppStore((s) => s.setVisibility);
   const router      = useRouter();
+  const pathname = usePathname();
 
   const [open, setOpen]           = useState(false);
   const [tab, setTab]             = useState<"profile" | "display">("profile");
   const ref = useRef<HTMLDivElement>(null);
   const eventProfileHref = ownAttendee ? `/events/${resolvedEventId}/people/${ownAttendee.id}` : `/events/${resolvedEventId}`;
+  const sectionLinks = [
+    { href: `/events/${resolvedEventId}`, label: "Home", icon: Home },
+    { href: `/events/${resolvedEventId}/matches`, label: "Matches", icon: Sparkles },
+    { href: `/events/${resolvedEventId}/people`, label: "People", icon: Users },
+    { href: `/events/${resolvedEventId}/scan`, label: "Scan", icon: QrCode },
+  ];
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -43,7 +50,7 @@ export function EventNavbar({ eventId }: { eventId: string }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href={`/events/${resolvedEventId}`} className="flex min-h-10 items-center gap-3 rounded-lg text-sm font-semibold">
+        <Link href="/events" className="flex min-h-10 items-center gap-3 rounded-lg text-sm font-semibold">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ffcc5c] text-xs font-black text-[#20160a] shadow-sm">
             R
           </span>
@@ -52,6 +59,25 @@ export function EventNavbar({ eventId }: { eventId: string }) {
             <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Attendee mode</span>
           </span>
         </Link>
+
+        <nav className="hidden items-center gap-1 rounded-xl border bg-muted/35 p-1 md:flex">
+          {sectionLinks.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || (href !== `/events/${resolvedEventId}` && pathname.startsWith(href));
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition",
+                  active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
 
         {user ? (
           <div ref={ref} className="relative">

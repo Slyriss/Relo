@@ -1,9 +1,12 @@
 import OpenAI from "openai";
 import { mockFollowup } from "@/lib/ai/followup";
 import { mockPrep } from "@/lib/ai/prep";
-import { connectionPlanResponseSchema, prepResponseSchema, profileResponseSchema } from "@/lib/ai/schemas";
+import { connectionPlanResponseSchema, prepResponseSchema, profileResponseSchema, researchBriefResponseSchema } from "@/lib/ai/schemas";
 import { inferGoals, inferIndustry, inferSeniority } from "@/lib/csv";
 import { env } from "@/lib/env";
+import type { PersonEnrichment } from "@/lib/enrichment";
+import type { NewsArticle } from "@/lib/news";
+import type { ResearchSource } from "@/lib/research";
 import type { Attendee, Meeting } from "@/types";
 
 export type FollowupInput = {
@@ -43,10 +46,27 @@ export type ConnectionPlan = {
   risk: string;
 };
 
+export type ResearchBriefInput = {
+  attendee: Attendee;
+  context?: string;
+  question?: string;
+  enrichment: PersonEnrichment;
+  news: NewsArticle[];
+  sources: ResearchSource[];
+};
+
+export type ResearchBrief = {
+  summary: string;
+  findings: string[];
+  sourceNotes: string[];
+  followUpQuestions: string[];
+};
+
 export interface AiProvider {
   generateFollowup(input: FollowupInput): Promise<string>;
   generatePrep(input: PrepInput): Promise<string[]>;
   generateConnectionPlan(input: ConnectionPlanInput, fallback: ConnectionPlan): Promise<ConnectionPlan>;
+  generateResearchBrief(input: ResearchBriefInput, fallback: ResearchBrief): Promise<ResearchBrief>;
   parseProfile(text: string): Promise<Partial<Attendee>>;
 }
 
@@ -160,6 +180,43 @@ class OpenAiProvider implements AiProvider {
       });
 
       return connectionPlanResponseSchema.parse(JSON.parse(response.choices[0]?.message.content ?? "{}"));
+    }, fallback);
+  }
+
+  async generateResearchBrief(input: ResearchBriefInput, fallback: ResearchBrief): Promise<ResearchBrief> {
+    if (!this.client) return fallback;
+
+    return this.withFallback(async () => {
+      const response = await this.client!.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an admin research analyst for an event intelligence platform. Create a concise target intelligence brief from only the provided source list, public signals, and article titles. Do not invent credentials, employers, education, funding, or LinkedIn URLs. If source coverage is weak, say so plainly. Return strict JSON only with summary, findings, sourceNotes, and followUpQuestions.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              target: input.attendee,
+              eventOrResearchContext: input.context,
+              researchQuestion: input.question,
+              enrichment: input.enrichment,
+              news: input.news,
+              sources: input.sources,
+              outputRules: [
+                "Write for an admin who is deciding what is known and what still needs verification.",
+                "Findings must be grounded in supplied sources or clearly labeled as inferred from submitted fields.",
+                "Source notes must mention gaps when no live news, LinkedIn, or web search source is available.",
+                "Follow-up questions should help the admin decide what to verify next.",
+              ],
+            }),
+          },
+        ],
+        response_format: { type: "json_object" },
+      });
+
+      return researchBriefResponseSchema.parse(JSON.parse(response.choices[0]?.message.content ?? "{}"));
     }, fallback);
   }
 

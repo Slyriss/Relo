@@ -9,9 +9,24 @@ describe("public-signal enrichment", () => {
     const enrichment = enrichAttendee(attendee, new Date("2026-01-01T00:00:00.000Z"));
 
     expect(enrichment.publicProfileUrl).toContain("linkedin.com");
-    expect(enrichment.companyNews[0]).toContain("AI infrastructure");
+    expect(enrichment.companyNews).toEqual([]);
+    expect(enrichment.signals.some((signal) => signal.label === "Submitted public profile")).toBe(true);
     expect(enrichment.strategy).toHaveLength(3);
     expect(enrichment.confidence).toBeGreaterThan(0.5);
+  });
+
+  it("does not fabricate a LinkedIn profile URL when one was not supplied or resolved", () => {
+    const enrichment = enrichAttendee(
+      {
+        ...demoAttendees[0],
+        linkedinUrl: undefined,
+      },
+      new Date("2026-01-01T00:00:00.000Z")
+    );
+
+    expect(enrichment.publicProfileUrl).toBeUndefined();
+    expect(enrichment.signals[0].label).toBe("LinkedIn not verified");
+    expect(enrichment.signals[0].url).toBeUndefined();
   });
 
   it("returns the highest priority enriched recommendations", () => {

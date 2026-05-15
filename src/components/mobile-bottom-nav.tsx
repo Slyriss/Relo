@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, QrCode, Sparkles, Users } from "lucide-react";
+import { Home, QrCode, Sparkles, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav({ eventId }: { eventId: string }) {
   const pathname = usePathname();
   const items = [
-    { href: `/events/${eventId}`,         label: "Home",    icon: CalendarDays },
-    { href: `/events/${eventId}/people`,  label: "People",  icon: Users },
+    { href: `/events/${eventId}`,         label: "Home",    icon: Home },
     { href: `/events/${eventId}/matches`, label: "Matches", icon: Sparkles },
+    { href: `/events/${eventId}/people`,  label: "People",  icon: Users },
     { href: `/events/${eventId}/scan`,    label: "Scan",    icon: QrCode }
   ];
 

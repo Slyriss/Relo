@@ -72,3 +72,10 @@ export const connectionPlanResponseSchema = z.object({
   nextStep: z.string().trim().min(1).max(300),
   risk: z.string().trim().min(1).max(300),
 }).strip();
+
+export const researchBriefResponseSchema = z.object({
+  summary: z.string().trim().min(1).max(700),
+  findings: z.array(z.string().trim().min(1).max(260)).min(2).max(6),
+  sourceNotes: z.array(z.string().trim().min(1).max(220)).min(1).max(4),
+  followUpQuestions: z.array(z.string().trim().min(1).max(180)).min(1).max(5),
+}).strip();

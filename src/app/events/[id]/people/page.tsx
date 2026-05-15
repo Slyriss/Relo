@@ -74,25 +74,6 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
     }
   }
 
-  function toggleConnect(targetId: string) {
-    if (!viewerId || targetId === viewerId) return;
-    const existing = meetingRequests.find(
-      (r) => r.requesterId === viewerId && r.targetId === targetId && r.eventId === eventId
-    );
-    if (existing) {
-      removeMeetingRequest(existing.id);
-    } else {
-      addMeetingRequest({
-        id: `req-${Date.now()}`,
-        eventId,
-        requesterId: viewerId,
-        targetId,
-        createdAt: new Date().toISOString(),
-        status: "pending",
-      });
-    }
-  }
-
   const goals: Array<Goal | "all"> = ["all", "fundraising", "hiring", "partnerships", "customers", "learning"];
   const companies = useMemo(() => ["all", ...Array.from(new Set(attendees.map((a) => a.company))).sort()], [attendees]);
   const industries = useMemo(
@@ -111,7 +92,7 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
   }, [attendees, company, goal, industry, query]);
 
   const tabs: { key: Tab; label: string; icon: React.ElementType; count?: number }[] = [
-    { key: "browse", label: "Browse", icon: List },
+    { key: "browse", label: "Directory", icon: List },
     { key: "pokes", label: "Pokes", icon: Bell, count: incomingPokes.length },
     { key: "mylist", label: "My List", icon: UserCheck, count: myList.length },
   ];
@@ -136,8 +117,8 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
           </div>
         ) : (
           <div>
-            <h1 className="text-3xl font-semibold tracking-normal">People</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{attendees.length} attending</p>
+            <h1 className="text-3xl font-semibold tracking-normal">People directory</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Browse attendee profiles. Save intent from a profile, not the list.</p>
           </div>
         )}
         {tab === "browse" && !searchOpen && (
@@ -197,41 +178,30 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
           <div className="grid gap-3">
             {filteredAttendees.map((attendee) => {
               const isConnected = myList.some((r) => r.targetId === attendee.id);
-              const isSelf = attendee.id === viewerId;
               return (
-                <div key={attendee.id} className="flex items-center gap-2">
-                  <Link href={`/events/${eventId}/people/${attendee.id}`} className="block min-w-0 flex-1">
-                    <Card className="transition-colors hover:border-primary/40 hover:bg-muted/30">
-                      <CardContent className="flex items-center gap-4 p-4">
-                        <ProfileAvatar name={attendee.name} photoUrl={attendee.photoUrl} className="h-11 w-11" />
-                        <div className="min-w-0 flex-1">
+                <Link key={attendee.id} href={`/events/${eventId}/people/${attendee.id}`} className="block min-w-0">
+                  <Card className="transition-colors hover:border-primary/40 hover:bg-muted/30">
+                    <CardContent className="flex items-center gap-4 p-4">
+                      <ProfileAvatar name={attendee.name} photoUrl={attendee.photoUrl} className="h-11 w-11" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
                           <div className="font-semibold">{attendee.name}</div>
-                          <div className="text-sm text-muted-foreground">{attendee.title}, {attendee.company}</div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {attendee.industry ? <Badge>{attendee.industry}</Badge> : null}
-                            {attendee.goals.map((g) => <Badge key={g}>{g}</Badge>)}
-                          </div>
+                          {isConnected ? (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              On my list
+                            </span>
+                          ) : null}
                         </div>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      </CardContent>
-                    </Card>
-                  </Link>
-                  <button
-                    onClick={() => toggleConnect(attendee.id)}
-                    disabled={!viewerId || isSelf}
-                    title={isConnected ? "Remove from my list" : "I want to meet this person"}
-                    className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition",
-                      isConnected
-                        ? "border-primary/40 bg-primary/5 text-primary"
-                        : isSelf || !viewerId
-                          ? "border-border bg-muted text-muted-foreground/50"
-                        : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-primary"
-                    )}
-                  >
-                    {isConnected ? <UserCheck className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                  </button>
-                </div>
+                        <div className="text-sm text-muted-foreground">{attendee.title}, {attendee.company}</div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {attendee.industry ? <Badge>{attendee.industry}</Badge> : null}
+                          {attendee.goals.map((g) => <Badge key={g}>{g}</Badge>)}
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                </Link>
               );
             })}
           </div>
@@ -309,7 +279,7 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
               <UserPlus className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
               <p className="text-sm font-medium">Your list is empty</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Tap the <UserPlus className="inline h-3.5 w-3.5" /> on any person to add them here.
+                Open someone&apos;s profile and choose Want to meet when there is a clear reason.
               </p>
             </div>
           ) : (

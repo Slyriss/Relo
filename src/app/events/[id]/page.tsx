@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { use } from "react";
-import { ArrowRight, CheckCircle2, Radio } from "lucide-react";
-import { MatchCard } from "@/components/match-card";
-import { NextBestPerson } from "@/components/next-best-person";
+import { ArrowRight, CalendarDays, CheckCircle2, Clock, MessageSquare, Radio } from "lucide-react";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { StatCard } from "@/components/stat-card";
 import { EventSwitcher } from "@/components/event-switcher";
@@ -21,34 +19,32 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
   const events = useAppStore(useShallow((state) => state.events));
   const attendees = useAppStore(useShallow((state) => state.attendees.filter((attendee) => attendee.eventId === eventId)));
   const meetings = useAppStore(useShallow((state) => state.meetings.filter((meeting) => meeting.eventId === eventId)));
+  const allEvents = useAppStore(useShallow((state) => state.events));
+  const allMeetingRequests = useAppStore(useShallow((state) => state.meetingRequests));
   const viewer = useCurrentEventAttendee(eventId);
   const viewerId = viewer?.id;
   const allRecommendations = useRecommendations(eventId, viewerId);
   const checkIns = useAppStore(useShallow((s) => s.checkIns.filter((c) => c.eventId === eventId)));
-  const recommendationActions = useAppStore(useShallow((s) => s.recommendationActions.filter((a) => a.eventId === eventId)));
   const toggleCheckIn = useAppStore((s) => s.toggleCheckIn);
-  const markRecommendationAction = useAppStore((s) => s.markRecommendationAction);
-  const logMeeting = useAppStore((s) => s.logMeeting);
 
   const iCheckedIn = checkIns.some((c) => c.attendeeId === viewerId);
   const checkedInIds = new Set(checkIns.map((c) => c.attendeeId));
-  const actionByTarget = new Map(recommendationActions.map((action) => [action.targetId, action]));
-  const activeRecommendations = allRecommendations.filter((recommendation) => {
-    const action = actionByTarget.get(recommendation.targetId);
-    return action?.action !== "skipped" && action?.action !== "met";
-  });
-  const nextBest =
-    activeRecommendations.find((recommendation) => checkedInIds.has(recommendation.targetId)) ?? activeRecommendations[0];
-  const nextBestAttendee = nextBest ? attendees.find((item) => item.id === nextBest.targetId) : undefined;
-  const recommendations = activeRecommendations
-    .filter((recommendation) => recommendation.targetId !== nextBest?.targetId)
-    .slice(0, 2);
 
   // Top matches who are checked in (excluding viewer)
   const hereNow = allRecommendations
     .map((r) => attendees.find((a) => a.id === r.targetId))
     .filter((a): a is NonNullable<typeof a> => !!a && checkedInIds.has(a.id))
     .slice(0, 6);
+  const topMatch = allRecommendations[0]
+    ? attendees.find((attendee) => attendee.id === allRecommendations[0].targetId)
+    : undefined;
+  const upcomingEvents = allEvents
+    .filter((item) => new Date(item.endsAt).getTime() >= Date.now())
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+  const myRequests = viewerId
+    ? allMeetingRequests.filter((request) => request.requesterId === viewerId || request.targetId === viewerId)
+    : [];
+  const pendingRequests = myRequests.filter((request) => request.status === "pending");
 
   if (!event) return <main className="p-6">Event not found.</main>;
 
@@ -82,27 +78,6 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
         </button>
       </div>
 
-      {event && viewerId && nextBest && nextBestAttendee ? (
-        <NextBestPerson
-          event={event}
-          viewer={viewer}
-          target={nextBestAttendee}
-          match={nextBest}
-          checkIns={checkIns}
-          action={actionByTarget.get(nextBest.targetId)}
-          onAction={(action, note) => markRecommendationAction({
-            eventId,
-            viewerId,
-            targetId: nextBest.targetId,
-            action,
-            note,
-          })}
-          onMeetingSave={async (meeting) => {
-            await logMeeting(meeting);
-          }}
-        />
-      ) : null}
-
       <section
         className="overflow-hidden rounded-2xl bg-cover bg-center p-6 text-background sm:p-8"
         style={{
@@ -130,6 +105,81 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
         <StatCard label="Recommended intros" value={allRecommendations.length} />
         <StatCard label="Your meetings" value={meetings.length} />
       </div>
+
+      <section className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+        <div className="rounded-2xl border bg-background p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2 text-lg font-semibold">
+                <CalendarDays className="h-5 w-5 text-primary" />
+                Your events
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">Upcoming event spaces linked to this account.</p>
+            </div>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              {upcomingEvents.length} upcoming
+            </span>
+          </div>
+          <div className="mt-4 grid gap-3">
+            {upcomingEvents.map((item) => {
+              const active = item.id === event.id;
+              return (
+                <Link
+                  key={item.id}
+                  href={`/events/${item.id}`}
+                  className={cn(
+                    "rounded-xl border p-4 transition hover:border-primary/40 hover:bg-muted/30",
+                    active && "border-primary/35 bg-primary/5"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-semibold">{sanitizeDisplayText(item.title, "Event title needs review")}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{sanitizeDisplayText(item.venue, "Venue needs review")}</p>
+                    </div>
+                    {active ? <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Current</span> : null}
+                  </div>
+                  <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    {new Date(item.startsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-background p-5">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            Meetings and intent
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">A quick summary of your meeting activity across this event.</p>
+          <div className="mt-4 grid gap-3">
+            <div className="rounded-xl border bg-muted/25 p-4">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Logged meetings</p>
+              <p className="mt-2 text-3xl font-semibold">{meetings.length}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Use Scan after a real conversation to add notes.</p>
+            </div>
+            <div className="rounded-xl border bg-muted/25 p-4">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Pending intro intent</p>
+              <p className="mt-2 text-3xl font-semibold">{pendingRequests.length}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {topMatch ? `Next recommendation: ${topMatch.name}.` : "Open Matches when you want a ranked next step."}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/events/${eventId}/matches`}>Review matches</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/events/${eventId}/scan`}>Log meeting</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Here now */}
       {hereNow.length > 0 && (
         <div className="space-y-3">
@@ -140,6 +190,7 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
             </span>
             Your matches here now
           </h2>
+          <p className="text-sm text-muted-foreground">Live room signal only. Open Matches when you want recommendations and prep.</p>
           <div className="flex flex-wrap gap-2">
             {hereNow.map((a) => (
             <Link
@@ -162,23 +213,6 @@ export default function EventHomePage({ params }: { params: Promise<{ id: string
           </div>
         </div>
       )}
-
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold tracking-normal">More good people to meet</h2>
-        {recommendations.map((match) => {
-          const attendee = attendees.find((item) => item.id === match.targetId);
-          return attendee ? (
-            <MatchCard
-              key={match.targetId}
-              attendee={attendee}
-              match={match}
-              source={viewer}
-              viewerId={viewerId}
-              eventId={eventId}
-            />
-          ) : null;
-        })}
-      </div>
     </main>
   );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, CalendarCheck2, Network, ShieldCheck, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CalendarCheck2, Network, ShieldCheck, Sparkles } from "lucide-react";
+import { HomeAuthActions } from "@/components/home-auth-actions";
 
 export default function HomePage() {
   return (
@@ -17,14 +17,7 @@ export default function HomePage() {
             <span className="grid h-9 w-9 place-items-center rounded-md bg-emerald-300 text-[#08111f]">R</span>
             Relo
           </Link>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="secondary" className="hidden sm:inline-flex">
-              <Link href="/signup">Start workspace</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
-          </div>
+          <HomeAuthActions compact />
         </nav>
 
         <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-12 pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
@@ -40,16 +33,7 @@ export default function HomePage() {
               Give organizers a real control room for attendee import, live engagement, intro operations, and sponsor-ready reports.
               Give participants a separate event space built around who they should meet next.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="bg-emerald-300 text-[#08111f] hover:bg-emerald-200">
-                <Link href="/signup">
-                  Create workspace <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="border-white/25 bg-white/10 text-white hover:bg-white/15">
-                <Link href="/login">Use demo accounts</Link>
-              </Button>
-            </div>
+            <HomeAuthActions />
           </div>
 
           <div className="grid gap-3 rounded-lg border border-white/14 bg-white/10 p-4 text-sm text-white/82 shadow-2xl backdrop-blur-md">

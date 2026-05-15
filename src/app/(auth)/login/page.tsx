@@ -1,33 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowRight, Building2, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GoogleAuthButton } from "@/components/google-auth-button";
 import { Input } from "@/components/ui/input";
-import { demoAccounts, type DemoAccount } from "@/lib/demo-accounts";
+import { appHomeForUser } from "@/lib/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const user = useAppStore((state) => state.user);
+  const events = useAppStore((state) => state.events);
+  const attendees = useAppStore((state) => state.attendees);
+  const loadingWorkspace = useAppStore((state) => state.loadingWorkspace);
   const refreshWorkspace = useAppStore((state) => state.refreshWorkspace);
-  const [magicSent, setMagicSent] = useState(false);
-  const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function magicLink(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    if (user && !loadingWorkspace) router.replace(appHomeForUser(user, events, attendees));
+  }, [attendees, events, loadingWorkspace, router, user]);
+
+  async function passwordLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email"));
+    const password = String(formData.get("password"));
     const supabase = createSupabaseBrowserClient();
-    if (supabase) {
-      await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: `${location.origin}/auth/callback?next=/dashboard/events` },
-      });
-      setMagicSent(true);
+    if (!supabase) return;
+
+    setError("");
+    setLoading(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) {
+      setLoading(false);
+      setError("Could not sign in. Check your email and password.");
+      return;
     }
+
+    await refreshWorkspace();
+    const workspace = useAppStore.getState();
+    if (workspace.user) router.replace(appHomeForUser(workspace.user, workspace.events, workspace.attendees));
+    setLoading(false);
   }
 
   async function googleOAuth() {
@@ -35,38 +54,8 @@ export default function LoginPage() {
     if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback?next=/dashboard/events` }
+      options: { redirectTo: `${location.origin}/auth/callback?next=/setup` }
     });
-  }
-
-  async function demoLogin(account: DemoAccount) {
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) return;
-
-    setError("");
-    setDemoLoading(account.email);
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: account.email,
-      password: account.password,
-    });
-    setDemoLoading(null);
-
-    if (signInError) {
-      setError("Demo account is not seeded yet. Run npm run seed:demo-accounts, then try again.");
-      return;
-    }
-
-    await refreshWorkspace();
-    const workspace = useAppStore.getState();
-    const firstEvent = workspace.events[0];
-    const targetPath =
-      account.role === "attendee"
-        ? firstEvent
-          ? `/events/${firstEvent.id || firstEvent.slug}`
-          : "/setup"
-        : "/dashboard/events";
-
-    window.location.assign(targetPath);
   }
 
   return (
@@ -84,7 +73,7 @@ export default function LoginPage() {
           <p className="text-sm font-medium uppercase text-emerald-100">Two products, one account boundary</p>
           <h1 className="mt-4 text-5xl font-semibold leading-tight tracking-normal">Admin control is separate from the participant event space.</h1>
           <p className="mt-5 text-lg leading-8 text-white/76">
-            Use the admin demo for operations. Use the participant demo for matches, QR, and meetings.
+            Admins go to event operations. Participants go to their event pass, matches, QR, and meetings.
           </p>
         </div>
       </section>
@@ -93,54 +82,21 @@ export default function LoginPage() {
         <Card className="w-full max-w-[480px] shadow-soft">
           <CardHeader>
             <CardTitle className="text-2xl">Sign in to Relo</CardTitle>
-            <p className="text-sm text-muted-foreground">Choose the workspace type you need. Demo accounts route to different products.</p>
+            <p className="text-sm text-muted-foreground">Use your account password or Google. Relo will open the right workspace for your role.</p>
           </CardHeader>
           <CardContent className="grid gap-4">
-            {magicSent ? (
-              <p className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
-                Check your inbox. The sign-in link will open the correct Relo workspace.
-              </p>
-            ) : (
-              <form onSubmit={magicLink} className="grid gap-3">
-                <Input name="email" type="email" placeholder="you@company.com" required />
-                <Button type="submit">
-                  Send magic link <ArrowRight className="h-4 w-4" />
-                </Button>
-              </form>
-            )}
-            <Button variant="outline" onClick={googleOAuth}>
-              Continue with Google
-            </Button>
+            <form onSubmit={passwordLogin} className="grid gap-3">
+              <Input name="email" type="email" aria-label="Email" placeholder="you@company.com" autoComplete="email" required />
+              <Input name="password" type="password" aria-label="Password" placeholder="Password" autoComplete="current-password" required />
+              {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+              <Button type="submit" disabled={loading}>
+                {loading ? "Signing in..." : "Sign in"} <ArrowRight className="h-4 w-4" />
+              </Button>
+            </form>
+            <GoogleAuthButton onClick={googleOAuth} />
             <p className="-mt-2 text-xs text-muted-foreground">
               Google sign-in can use your Google name, email, and profile photo for your Relo profile.
             </p>
-            <div className="rounded-lg border bg-muted/30 p-3">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Seeded demo accounts</p>
-              <div className="mt-3 grid gap-2">
-                {demoAccounts.map((account) => {
-                  const Icon = account.role === "attendee" ? UserRound : Building2;
-                  return (
-                    <Button
-                      key={account.email}
-                      type="button"
-                      variant="secondary"
-                      onClick={() => demoLogin(account)}
-                      disabled={demoLoading !== null}
-                      className="h-auto min-h-14 justify-start gap-3 px-3 py-3 text-left"
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold">{account.label}</span>
-                        <span className="block truncate text-xs font-normal opacity-70">
-                          {demoLoading === account.email ? "Signing in..." : account.email}
-                        </span>
-                      </span>
-                    </Button>
-                  );
-                })}
-              </div>
-              {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
-            </div>
             <p className="text-center text-sm text-muted-foreground">
               New here? <Link href="/signup" className="text-primary">Create an account</Link>
             </p>

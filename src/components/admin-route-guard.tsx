@@ -4,16 +4,13 @@ import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { useAppStore } from "@/lib/store";
-
-function participantHome(events: { id: string; slug: string }[]) {
-  const event = events[0];
-  return event ? `/events/${event.id || event.slug}` : "/setup";
-}
+import { appHomeForUser } from "@/lib/navigation";
 
 export function AdminRouteGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const user = useAppStore((state) => state.user);
   const events = useAppStore((state) => state.events);
+  const attendees = useAppStore((state) => state.attendees);
   const loadingWorkspace = useAppStore((state) => state.loadingWorkspace);
   const refreshWorkspace = useAppStore((state) => state.refreshWorkspace);
 
@@ -22,8 +19,8 @@ export function AdminRouteGuard({ children }: { children: ReactNode }) {
   }, [loadingWorkspace, refreshWorkspace, user]);
 
   useEffect(() => {
-    if (user?.role === "attendee") router.replace(participantHome(events));
-  }, [events, router, user?.role]);
+    if (user?.role === "attendee") router.replace(appHomeForUser(user, events, attendees));
+  }, [attendees, events, router, user]);
 
   if (!user || loadingWorkspace || user.role === "attendee") {
     return (

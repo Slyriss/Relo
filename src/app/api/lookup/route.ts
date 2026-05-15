@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { attendeePayloadSchema } from "@/lib/ai/schemas";
 import { guardPost, readJsonBody, RequestBodyError } from "@/lib/api/security";
-import { aiProvider, type ConnectionPlan } from "@/lib/ai/provider";
+import { aiProvider, type ConnectionPlan, type ResearchBrief } from "@/lib/ai/provider";
 import { scanAttendeeEnrichment } from "@/lib/data/enrichment";
 import { fetchRecentNews } from "@/lib/news";
+import { discoverPublicSources, type ResearchSource } from "@/lib/research";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ const viewerSchema = z.object({
 const lookupSchema = z.object({
   attendee: attendeePayloadSchema,
   context: z.string().trim().max(500).optional(),
+  researchQuestion: z.string().trim().max(500).optional(),
   sharedContext: z.string().trim().max(500).optional(),
   viewer: viewerSchema.optional(),
   persist: z.boolean().default(false),
@@ -79,6 +81,53 @@ function buildConnectionPlan({
   };
 }
 
+function buildResearchFallback({
+  attendee,
+  context,
+  question,
+  sources,
+  newsTitles,
+}: {
+  attendee: z.infer<typeof attendeePayloadSchema>;
+  context?: string;
+  question?: string;
+  sources: ResearchSource[];
+  newsTitles: string[];
+}): ResearchBrief {
+  const linkedInSource = sources.find((source) => source.type === "linkedin" && source.verified);
+  const webSourceCount = sources.filter((source) => source.type === "web").length;
+  const newsCount = newsTitles.length;
+  const role = [attendee.title, attendee.company].filter(Boolean).join(" at ") || attendee.name;
+
+  return {
+    summary: `${attendee.name} is being researched as ${role}${context ? ` for ${context}` : ""}. ${
+      linkedInSource
+        ? "A LinkedIn profile URL is available in the source set."
+        : "No verified LinkedIn profile URL is available yet."
+    } The brief below is limited to submitted profile fields and live sources returned by the configured source providers.`,
+    findings: [
+      `${attendee.name}'s submitted profile places them around ${attendee.industry ?? "the stated market"} and ${attendee.company || "their organization"}.`,
+      newsCount
+        ? `${newsCount} recent public article${newsCount === 1 ? "" : "s"} were returned for the target/company/context query.`
+        : "No recent public articles were returned by the configured news source for this query.",
+      webSourceCount
+        ? `${webSourceCount} additional public web source${webSourceCount === 1 ? "" : "s"} were found for review.`
+        : "No additional public web sources were found unless a live search provider is configured.",
+      question ? `Research question to answer: ${question}` : "No specific admin research question was supplied.",
+    ],
+    sourceNotes: [
+      linkedInSource
+        ? `LinkedIn source: ${linkedInSource.url}`
+        : "LinkedIn was not verified; Relo is intentionally not showing a search-results URL as a profile.",
+      newsCount ? `Recent article titles include: ${newsTitles.slice(0, 2).join("; ")}` : "News coverage is empty for this query.",
+    ],
+    followUpQuestions: [
+      "What exact role, company, or profile detail should the admin verify before acting on this record?",
+      "Is there an official company page, speaker page, or event bio that can confirm the target's current position?",
+    ],
+  };
+}
+
 async function withTimeout<T>(promise: Promise<T>, fallback: T, timeoutMs = 5000): Promise<T> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   try {
@@ -110,26 +159,60 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "attendee is required" }, { status: 400 });
   }
 
-  const result = await scanAttendeeEnrichment(parsed.data.attendee);
-  const news = await fetchRecentNews({
-    name: parsed.data.attendee.name,
-    company: parsed.data.attendee.company,
-    industry: parsed.data.attendee.industry,
-    context: parsed.data.context,
-  });
+  const [sourceDiscovery, news] = await Promise.all([
+    discoverPublicSources(parsed.data.attendee, { context: parsed.data.context }),
+    fetchRecentNews({
+      name: parsed.data.attendee.name,
+      company: parsed.data.attendee.company,
+      industry: parsed.data.attendee.industry,
+      context: parsed.data.context,
+    }),
+  ]);
+  const attendeeWithResolvedSources = {
+    ...parsed.data.attendee,
+    linkedinUrl: parsed.data.attendee.linkedinUrl ?? sourceDiscovery.linkedInUrl,
+  };
+  const result = await scanAttendeeEnrichment(attendeeWithResolvedSources);
+  const articleSources: ResearchSource[] = news.map((article) => ({
+    type: "news",
+    title: article.title,
+    url: article.url,
+    source: article.source,
+    snippet: article.snippet,
+    verified: true,
+  }));
+  const sources = [...sourceDiscovery.sources, ...articleSources];
   const connectionPlan = buildConnectionPlan({
     viewer: parsed.data.viewer,
-    attendee: parsed.data.attendee,
+    attendee: attendeeWithResolvedSources,
     context: parsed.data.context,
     topNewsTitle: news[0]?.title,
   });
+  const researchFallback = buildResearchFallback({
+    attendee: attendeeWithResolvedSources,
+    context: parsed.data.context,
+    question: parsed.data.researchQuestion,
+    sources,
+    newsTitles: news.map((article) => article.title),
+  });
+  const researchBrief = await aiProvider.generateResearchBrief(
+    {
+      attendee: attendeeWithResolvedSources,
+      context: parsed.data.context,
+      question: parsed.data.researchQuestion,
+      enrichment: result.enrichment,
+      news,
+      sources,
+    },
+    researchFallback
+  );
   const personalizedConnectionPlan =
     connectionPlan && parsed.data.viewer
       ? await withTimeout(
           aiProvider.generateConnectionPlan(
             {
               viewer: parsed.data.viewer,
-              attendee: parsed.data.attendee,
+              attendee: attendeeWithResolvedSources,
               context: parsed.data.context,
               sharedContext: parsed.data.sharedContext,
               newsTitles: news.map((article) => article.title),
@@ -145,6 +228,10 @@ export async function POST(request: Request) {
     enrichment: result.enrichment,
     news,
     connectionPlan: personalizedConnectionPlan,
+    researchBrief,
+    sources,
+    sourceStatus: sourceDiscovery.status,
+    sourceProvider: sourceDiscovery.provider,
     context: parsed.data.context ?? null,
     mode: "public-lookup",
   });

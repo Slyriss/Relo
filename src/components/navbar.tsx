@@ -7,6 +7,7 @@ import { CalendarDays, LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { useAppStore } from "@/lib/store";
+import { appHomeForUser } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
@@ -25,7 +26,7 @@ export function Navbar() {
             attendee.eventId === event.id &&
             (attendee.userId === user.id || attendee.email.toLowerCase() === user.email.toLowerCase())
         )
-      ) ?? events[0]
+      )
     : undefined;
   const participantAttendee = participantEvent
     ? attendees.find(
@@ -34,11 +35,7 @@ export function Navbar() {
           (attendee.userId === user?.id || attendee.email.toLowerCase() === user?.email.toLowerCase())
       )
     : undefined;
-  const appHref = isAttendee
-    ? participantEvent
-      ? `/events/${participantEvent.id || participantEvent.slug}`
-      : "/setup"
-    : "/dashboard/events";
+  const appHref = user ? appHomeForUser(user, events, attendees) : "/login";
   const profileHref = isAttendee
     ? participantEvent && participantAttendee
       ? `/events/${participantEvent.id}/people/${participantAttendee.id}`

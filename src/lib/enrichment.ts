@@ -52,49 +52,37 @@ const GOAL_STRATEGY: Record<Goal, string> = {
   learning: "Use a crisp question about their current operating lesson, then trade one of your own.",
 };
 
-const COMPANY_NEWS: Record<string, string[]> = {
-  "Orbit AI": ["AI infrastructure buyers are consolidating around fewer, more trusted workflow vendors."],
-  "Forge Capital": ["Developer tooling and applied AI remain active early-stage investment themes."],
-  BrightOps: ["People teams are rebuilding hiring loops around efficiency, retention, and manager quality."],
-  Northwind: ["SaaS partnership teams are shifting from broad ecosystem programs to measurable co-sell plays."],
-  LedgerFlow: ["Finance teams are watching usage-based pricing, cash discipline, and automation in close detail."],
-  Kindred: ["Open-source communities are becoming stronger distribution channels for data and developer tooling."],
-  "Apollo Health": ["Clinical workflow teams are prioritizing measurable time savings over broad AI experimentation."],
-  "Atlas Labs": ["Procurement automation is moving toward faster vendor evaluation and tighter spend visibility."],
-  Signal: ["B2B teams are revisiting founder-led sales, lifecycle motion, and pipeline quality."],
-  CityGrid: ["Marketplace operators are focused on liquidity, unit economics, and trust signals."],
-  "Mesh Data": ["Graph and customer-intelligence teams are using relationship context to improve prioritization."],
-  RippleWorks: ["Operator networks are increasingly used to transfer practical playbooks across impact teams."],
-  NomadPay: ["Cross-border payroll teams are watching compliance, payments reliability, and global hiring."],
-  "Launch Legal": ["Founders are prioritizing financing readiness, commercial contracts, and AI policy risk."],
-  Cloudlane: ["Platform teams are consolidating infrastructure tools and scrutinizing vendor reliability."],
-  "Sakura Ventures": ["Applied AI and vertical SaaS remain strong thesis areas for early-stage investors."],
-  "Cobalt Labs": ["Security buyers are focused on practical risk reduction and vendor trust."],
-  FieldKit: ["Climate and field-ops teams are pairing hardware data with automation to improve deployment speed."],
-  "Northstar Ventures": ["Founder communities are moving toward curated, high-trust relationship design."],
-  MarketBeam: ["Growth teams are prioritizing lifecycle experiments and higher-quality PLG conversion."],
-};
-
 function inferProfileUrl(attendee: Attendee) {
   if (attendee.linkedinUrl) return attendee.linkedinUrl;
-  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${attendee.name} ${attendee.company}`)}`;
+  return undefined;
 }
 
 export function enrichAttendee(attendee: Attendee, now = new Date()): PersonEnrichment {
   const industry = attendee.industry ?? "Technology";
   const likelyFocus = INDUSTRY_FOCUS[industry] ?? "relationship building, market insight, and practical collaboration";
   const profileUrl = inferProfileUrl(attendee);
-  const companyNews = COMPANY_NEWS[attendee.company] ?? [
-    `${attendee.company} is likely watching efficiency, customer quality, and partnership leverage in the current market.`,
-  ];
-  const signals: PublicSignal[] = [
+  const companyNews: string[] = [];
+  const signals: PublicSignal[] = [];
+
+  if (profileUrl) {
+    signals.push(
     {
       source: "linkedin",
-      label: attendee.linkedinUrl ? "Public profile" : "Profile search",
+      label: "Submitted public profile",
       value: `${attendee.name} at ${attendee.company}`,
       url: profileUrl,
-      confidence: attendee.linkedinUrl ? 0.92 : 0.62,
-    },
+      confidence: 0.92,
+    });
+  } else {
+    signals.push({
+      source: "linkedin",
+      label: "LinkedIn not verified",
+      value: "No submitted or resolved LinkedIn profile URL. Relo will not substitute a search-results URL as a profile.",
+      confidence: 0.2,
+    });
+  }
+
+  signals.push(
     {
       source: "company",
       label: "Company context",
@@ -102,18 +90,12 @@ export function enrichAttendee(attendee: Attendee, now = new Date()): PersonEnri
       confidence: attendee.industry ? 0.85 : 0.55,
     },
     {
-      source: "news",
-      label: "Market signal",
-      value: companyNews[0],
-      confidence: 0.68,
-    },
-    {
       source: "event",
       label: "Event intent",
       value: attendee.goals.map((goal) => GOAL_STRATEGY[goal]).join(" "),
       confidence: 0.9,
     },
-  ];
+  );
 
   return {
     attendeeId: attendee.id,
