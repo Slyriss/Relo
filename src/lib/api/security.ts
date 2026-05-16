@@ -28,6 +28,12 @@ export function assertSameOrigin(request: Request) {
 
   const requestOrigin = new URL(request.url).origin;
   const allowed = new Set([requestOrigin, env.NEXT_PUBLIC_APP_URL]);
+  const requestUrl = new URL(requestOrigin);
+  if (requestUrl.hostname === "localhost" || requestUrl.hostname === "127.0.0.1") {
+    const port = requestUrl.port ? `:${requestUrl.port}` : "";
+    allowed.add(`${requestUrl.protocol}//localhost${port}`);
+    allowed.add(`${requestUrl.protocol}//127.0.0.1${port}`);
+  }
   if (!allowed.has(origin)) {
     return NextResponse.json({ error: "Cross-origin request blocked" }, { status: 403 });
   }

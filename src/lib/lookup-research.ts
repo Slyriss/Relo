@@ -103,6 +103,31 @@ function buildResearchFallback({
         ? "A LinkedIn profile URL is available in the source set."
         : "No verified LinkedIn profile URL is available yet."
     } The brief below is limited to submitted profile fields and live sources returned by the configured source providers.`,
+    actionPlan: {
+      approach: question
+        ? `Use the stated goal as the frame: ${question}. Open with the event context, then ask a short question that lets ${attendee.name} talk about their work before you mention your own agenda.`
+        : `Approach ${attendee.name} with a short event-context opener and keep the first exchange focused on learning what they are trying to get out of the room.`,
+      opener: context
+        ? `Hi ${attendee.name}, I saw your work around ${attendee.company || "this space"} and noticed you're here for ${context}. What part of the event has been most relevant for you so far?`
+        : `Hi ${attendee.name}, I saw your work around ${attendee.company || "this space"}. What are you hoping to learn or meet people for today?`,
+      talkingPoints: [
+        linkedInSource ? "Reference the verified LinkedIn/source context lightly, without sounding like you over-researched them." : "Acknowledge that you only have limited source context and ask them to correct your understanding.",
+        newsTitles[0] ? `Use the most relevant company or market article only if it connects naturally: ${newsTitles[0]}.` : `Ask about ${attendee.company || "their work"} and what problems are most active for them right now.`,
+        "Keep the conversation centered on their current priority before introducing your own request.",
+      ],
+      questions: [
+        "What brought you to this event, and what would make it useful for you?",
+        `How are you thinking about ${attendee.company || "your current work"} in this market right now?`,
+        "Is there a type of person here you would be especially glad to meet?",
+      ],
+      offer: "Offer one useful intro, context note, or follow-up resource based on what they say instead of leading with a broad pitch.",
+      followUp: "If the conversation has energy, ask permission to send one concise follow-up with the specific resource, intro, or question you discussed.",
+      avoid: [
+        "Do not overstate what the sources prove.",
+        "Do not open with sensitive company news unless they bring it up first.",
+        "Do not make the conversation feel like a scripted pitch.",
+      ],
+    },
     findings: [
       `${attendee.name}'s submitted profile places them around ${attendee.industry ?? "the stated market"} and ${attendee.company || "their organization"}.`,
       newsCount

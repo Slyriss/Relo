@@ -57,6 +57,15 @@ export type ResearchBriefInput = {
 
 export type ResearchBrief = {
   summary: string;
+  actionPlan: {
+    approach: string;
+    opener: string;
+    talkingPoints: string[];
+    questions: string[];
+    offer: string;
+    followUp: string;
+    avoid: string[];
+  };
   findings: string[];
   sourceNotes: string[];
   followUpQuestions: string[];
@@ -193,7 +202,7 @@ class OpenAiProvider implements AiProvider {
           {
             role: "system",
             content:
-              "You are an admin research analyst for an event intelligence platform. Create a concise target intelligence brief from only the provided source list, public signals, and article titles. Do not invent credentials, employers, education, funding, or LinkedIn URLs. If source coverage is weak, say so plainly. Return strict JSON only with summary, findings, sourceNotes, and followUpQuestions.",
+              "You are an admin research analyst and event networking strategist for an event intelligence platform. Create a concise target intelligence brief from only the provided source list, public signals, article titles, and source excerpts. Do not invent credentials, employers, education, funding, or LinkedIn URLs. If source coverage is weak, say so plainly. The output must move from evidence to action: give a practical approach plan the user can use in the room. Return strict JSON only with summary, actionPlan, findings, sourceNotes, and followUpQuestions.",
           },
           {
             role: "user",
@@ -207,6 +216,10 @@ class OpenAiProvider implements AiProvider {
               outputRules: [
                 "Write for an admin who is deciding what is known and what still needs verification.",
                 "Findings must be grounded in supplied sources or clearly labeled as inferred from submitted fields.",
+                "Action plan must answer the research question directly when one is provided.",
+                "Action plan must include a natural opener, 2-5 talking points, 2-5 questions, a useful offer, a follow-up, and what to avoid.",
+                "If the user asks how to approach someone at an event, focus on a respectful in-person approach, not a pitch deck.",
+                "Prefer specific details from LinkedIn/source excerpts over generic company news when both exist.",
                 "Source notes must mention gaps when no live news, LinkedIn, or web search source is available.",
                 "Follow-up questions should help the admin decide what to verify next.",
               ],

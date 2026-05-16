@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -53,10 +53,12 @@ export default function SetupPage() {
   const router = useRouter();
   const user = useAppStore((state) => state.user);
   const events = useAppStore((state) => state.events);
+  const refreshWorkspace = useAppStore((state) => state.refreshWorkspace);
   const updateUser = useAppStore((state) => state.updateUser);
   const setVisibility = useAppStore((state) => state.setVisibility);
 
   const [step, setStep] = useState(0);
+  const [checkingAccess, setCheckingAccess] = useState(!user);
 
   // Step 0 state
   const [name, setName] = useState(user?.name ?? "");
@@ -72,6 +74,38 @@ export default function SetupPage() {
 
   // Step 2 state — mirrors store visibility
   const visibility = user?.visibility;
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function verifyAccess() {
+      if (user) {
+        setCheckingAccess(false);
+        return;
+      }
+
+      setCheckingAccess(true);
+      await refreshWorkspace();
+      const currentUser = useAppStore.getState().user;
+      if (!mounted) return;
+      if (!currentUser) {
+        router.replace("/login?next=/setup");
+        return;
+      }
+      setCheckingAccess(false);
+    }
+
+    void verifyAccess();
+    return () => {
+      mounted = false;
+    };
+  }, [refreshWorkspace, router, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    setName((current) => current || user.name);
+    setRole(user.role === "organizer" || user.role === "admin" ? "organizer" : "attendee");
+  }, [user]);
 
   async function handleStep0() {
     updateUser({ name: name.trim(), role: canChooseOrganizer ? role : "attendee" });
@@ -126,7 +160,25 @@ export default function SetupPage() {
     router.push("/dashboard/events");
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-muted/40 px-4 py-12">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>{checkingAccess ? "Checking access" : "Sign in required"}</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {checkingAccess ? "Opening your Relo setup workspace." : "Setup is only available after you sign in."}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <a href="/login?next=/setup">Sign in to continue</a>
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="grid min-h-screen place-items-center bg-muted/40 px-4 py-12">

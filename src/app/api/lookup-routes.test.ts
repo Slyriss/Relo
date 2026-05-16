@@ -67,6 +67,8 @@ describe("manual lookup API", () => {
     expect(body.connectionPlan.headline).toContain("John Tan");
     expect(body.connectionPlan.partnership).toContain("Relo");
     expect(body.connectionPlan.personalBridge).toContain("Founder");
+    expect(body.researchBrief.actionPlan.opener).toBeTruthy();
+    expect(body.researchBrief.actionPlan.talkingPoints.length).toBeGreaterThanOrEqual(2);
     expect(body.context).toBe("Edutech Startup event in Singapore");
   });
 

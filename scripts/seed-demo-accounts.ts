@@ -12,6 +12,15 @@ import {
 import { defaultVisibility } from "../src/types";
 import type { Database } from "../src/types/database";
 
+function demoAccountFor(role: "organizer" | "attendee") {
+  const account = demoAccounts.find((item) => item.role === role);
+  if (!account) throw new Error(`Demo ${role} account is required.`);
+  return account;
+}
+
+const organizerAccount = demoAccountFor("organizer");
+const participantAccount = demoAccountFor("attendee");
+
 function loadEnvFile(path: string) {
   if (!existsSync(path)) return;
 
@@ -82,7 +91,7 @@ function profileFor(account: (typeof demoAccounts)[number], id: string) {
     industry: account.role === "organizer" ? "Venture Capital" : attendee?.industry,
     location: "San Francisco, CA",
     skills: account.role === "organizer" ? ["Event Strategy", "Founder Community", "Venture Capital"] : [],
-    photo_url: account.role === "organizer" ? "https://i.pravatar.cc/160?u=organizer@relo.demo" : attendee?.photoUrl,
+    photo_url: account.role === "organizer" ? `https://i.pravatar.cc/160?u=${account.email}` : attendee?.photoUrl,
     visibility: defaultVisibility,
     crawl_status: "found" as const,
     crawled_at: new Date().toISOString(),
@@ -99,8 +108,8 @@ async function main() {
     if (error) throw error;
   }
 
-  const organizerId = userIds.get("organizer@relo.demo")!;
-  const participantId = userIds.get("participant@relo.demo")!;
+  const organizerId = userIds.get(organizerAccount.email)!;
+  const participantId = userIds.get(participantAccount.email)!;
 
   const { data: organization, error: orgError } = await supabase
     .from("organizations")
@@ -154,7 +163,7 @@ async function main() {
           event_id: event.id,
           user_id: attendee.id === "att-1" ? participantId : null,
           name: attendee.name,
-          email: attendee.id === "att-1" ? "participant@relo.demo" : attendee.email,
+          email: attendee.id === "att-1" ? participantAccount.email : attendee.email,
           company: attendee.company,
           title: attendee.title,
           linkedin_url: attendee.linkedinUrl,
@@ -221,7 +230,7 @@ async function main() {
     if (error) throw error;
   }
 
-  console.log("Seeded demo accounts:");
+  console.log("Seeded internal QA accounts:");
   for (const account of demoAccounts) {
     console.log(`- ${account.label}: ${account.email} / ${account.password}`);
   }

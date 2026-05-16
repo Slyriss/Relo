@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { useAppStore, useCurrentEventAttendee, useEvent } from "@/lib/store";
 import { cn, sanitizeDisplayText } from "@/lib/utils";
-import { useShallow } from "zustand/react/shallow";
 
 export function EventCheckInGate({ eventId, children }: { eventId: string; children: React.ReactNode }) {
   const event = useEvent(eventId);
   const resolvedEventId = event?.id ?? eventId;
   const attendee = useCurrentEventAttendee(resolvedEventId);
-  const checkIns = useAppStore(useShallow((state) => state.checkIns.filter((checkIn) => checkIn.eventId === resolvedEventId)));
+  const checkIns = useAppStore((state) => state.checkIns);
   const toggleCheckIn = useAppStore((state) => state.toggleCheckIn);
-  const checkedIn = attendee ? checkIns.some((checkIn) => checkIn.attendeeId === attendee.id) : false;
+  const checkedIn = attendee
+    ? checkIns.some((checkIn) => checkIn.eventId === resolvedEventId && checkIn.attendeeId === attendee.id)
+    : false;
 
   if (checkedIn) return <>{children}</>;
 

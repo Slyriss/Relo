@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { useAppStore } from "@/lib/store";
 import { useShallow } from "zustand/react/shallow";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeDisplayText } from "@/lib/utils";
 import { GOAL_COLOR } from "@/lib/graph";
 
 type Strength = "strong" | "regular" | "new";
@@ -71,17 +71,17 @@ export default function ContactsPage() {
 
       return {
         email,
-        name:       rep.name,
-        company:    rep.company,
-        title:      rep.title,
+        name:       sanitizeDisplayText(rep.name, "Contact needs review"),
+        company:    sanitizeDisplayText(rep.company, "Company needs review"),
+        title:      sanitizeDisplayText(rep.title, "Title needs review"),
         linkedinUrl: rep.linkedinUrl,
         photoUrl: rep.photoUrl,
         goals:      rep.goals,
         meetingCount: meetings.length,
         eventsTogether: eventIds.size,
         lastMetAt:  lastMeeting?.createdAt ?? attendedEvent?.startsAt ?? new Date(0).toISOString(),
-        lastEventTitle: lastEvent?.title ?? attendedEvent?.title ?? "No meetings logged",
-        latestNote: lastMeeting?.note ?? "",
+        lastEventTitle: sanitizeDisplayText(lastEvent?.title ?? attendedEvent?.title ?? "No meetings logged", "Event needs review"),
+        latestNote: lastMeeting?.note ? sanitizeDisplayText(lastMeeting.note, "Meeting note needs review") : "",
         strength:   strength(meetings.length),
       };
     }).sort((a, b) => b.meetingCount - a.meetingCount || b.lastMetAt.localeCompare(a.lastMetAt));

@@ -42,34 +42,36 @@ npm run seed
 2. Run `supabase/migrations/001_initial_schema.sql`.
 3. Optionally run `supabase/seed.sql`.
 4. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
-5. Enable magic link auth and add Google OAuth credentials in Supabase Auth providers.
+5. Enable email/password auth and add Google OAuth credentials in Supabase Auth providers.
 6. For direct migration runs, set `SUPABASE_DB_URL` to a Supabase pooler Postgres URI and run `npm run db:migrate`.
+
+### Google OAuth production branding
+
+Google OAuth branding is configured outside this repo:
+
+1. Add a custom Supabase auth domain such as `auth.relo.app`.
+2. In Google Cloud Console, set the OAuth consent app name/logo to the production Relo brand.
+3. Add Supabase callback URLs for local and production, including `http://localhost:3000/auth/callback` and `https://auth.relo.app/auth/v1/callback`.
+4. In Supabase Auth, enable Google and confirm the provider uses the same Client ID/secret and redirect domain.
 
 ## Live Flow
 
-1. Go to `/signup` or `/login` and authenticate with magic link or Google.
+1. Go to `/signup` or `/login` and authenticate with email/password or Google.
 2. Open `/dashboard/events` and create an event.
 3. Open an event detail page and import attendees via CSV.
 4. Open the attendee event URL to see ranked recommendations.
 5. Visit the scan page to log meetings. Offline submissions queue in IndexedDB and sync when online.
 6. Review organizer metrics in the admin event view and attendee recap from the participant event view.
 
-## Demo Accounts
+## Internal QA Seed
 
-Seed real Supabase Auth demo accounts with:
+For local QA, seed internal Supabase Auth accounts and sample event data with:
 
 ```bash
 npm run seed:demo-accounts
 ```
 
-Then sign in from `/login` with one of the demo account buttons:
-
-```text
-Organizer: organizer@relo.demo / ReloDemo2026!
-Participant: participant@relo.demo / ReloDemo2026!
-```
-
-These are real Supabase password accounts backed by seeded organization, event, attendee, meeting, check-in, and intro-request records.
+These accounts are for internal testing only. The public product UI does not expose sample access or sample credentials.
 
 ## CSV Columns
 

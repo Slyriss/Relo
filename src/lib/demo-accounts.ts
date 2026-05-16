@@ -1,18 +1,16 @@
-export const DEMO_PASSWORD = "ReloDemo2026!";
-
 export const demoAccounts = [
   {
-    label: "Admin operations demo",
-    email: "organizer@relo.demo",
-    password: DEMO_PASSWORD,
+    label: "Admin QA account",
+    email: "admin@relo.demo",
+    password: "admin123",
     name: "Ava Chen",
     role: "organizer" as const,
     description: "Full control-room workspace with seeded event data.",
   },
   {
-    label: "Participant event demo",
+    label: "Participant QA account",
     email: "participant@relo.demo",
-    password: DEMO_PASSWORD,
+    password: "participant123",
     name: "Maya Patel",
     role: "attendee" as const,
     description: "Participant event space for browsing matches and logging meetings.",

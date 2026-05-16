@@ -3,21 +3,24 @@ import { expect, test } from "@playwright/test";
 test.describe("home page", () => {
   test("renders hero and feature cards", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: /relationship roi/i })).toBeVisible();
-    await expect(page.getByText("Recommended intros")).toBeVisible();
-    await expect(page.getByText("QR meeting capture")).toBeVisible();
-    await expect(page.getByText("Organizer analytics")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Relo$/i })).toBeVisible();
+    await expect(page.getByText("Workspace isolation")).toBeVisible();
+    await expect(page.getByText("Event operations")).toBeVisible();
+    await expect(page.getByText("Attendee outcomes")).toBeVisible();
   });
 
-  test("Launch demo CTA navigates to dashboard", async ({ page }) => {
+  test("public CTAs use enterprise access language", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: /launch demo/i }).click();
-    await expect(page).toHaveURL(/\/dashboard\/events/);
+    await expect(page.getByRole("link", { name: /request access/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /^sign in$/i }).first()).toBeVisible();
+    await expect(page.getByText(/demo/i)).toHaveCount(0);
   });
 
-  test("Attendee mode CTA navigates to event page", async ({ page }) => {
+  test("mobile landing has no horizontal overflow", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    await page.getByRole("link", { name: /attendee mode/i }).click();
-    await expect(page).toHaveURL(/\/events\/relo-summit-2026/);
+    await expect(page.getByRole("heading", { name: /^Relo$/i })).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+    expect(overflow).toBe(false);
   });
 });

@@ -75,6 +75,15 @@ export const connectionPlanResponseSchema = z.object({
 
 export const researchBriefResponseSchema = z.object({
   summary: z.string().trim().min(1).max(700),
+  actionPlan: z.object({
+    approach: z.string().trim().min(1).max(420),
+    opener: z.string().trim().min(1).max(240),
+    talkingPoints: z.array(z.string().trim().min(1).max(220)).min(2).max(5),
+    questions: z.array(z.string().trim().min(1).max(220)).min(2).max(5),
+    offer: z.string().trim().min(1).max(260),
+    followUp: z.string().trim().min(1).max(260),
+    avoid: z.array(z.string().trim().min(1).max(180)).min(1).max(4),
+  }).strip(),
   findings: z.array(z.string().trim().min(1).max(260)).min(2).max(6),
   sourceNotes: z.array(z.string().trim().min(1).max(220)).min(1).max(4),
   followUpQuestions: z.array(z.string().trim().min(1).max(180)).min(1).max(5),

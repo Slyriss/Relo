@@ -17,7 +17,7 @@ export function HomeAuthActions({ compact = false }: { compact?: boolean }) {
       <div className="flex items-center gap-2">
         {!user ? (
           <Button asChild variant="secondary" className="hidden sm:inline-flex">
-            <Link href="/signup">Start workspace</Link>
+            <Link href="/signup">Request access</Link>
           </Button>
         ) : null}
         <Button asChild>
@@ -31,12 +31,12 @@ export function HomeAuthActions({ compact = false }: { compact?: boolean }) {
     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
       <Button asChild size="lg" className="bg-emerald-300 text-[#08111f] hover:bg-emerald-200">
         <Link href={href}>
-          {user ? "Open your workspace" : "Create workspace"} <ArrowRight className="h-4 w-4" />
+          {user ? "Open your workspace" : "Request access"} <ArrowRight className="h-4 w-4" />
         </Link>
       </Button>
       {!user ? (
         <Button asChild size="lg" variant="outline" className="border-white/25 bg-white/10 text-white hover:bg-white/15">
-          <Link href="/login">Use demo accounts</Link>
+          <Link href="/login">Sign in</Link>
         </Button>
       ) : null}
     </div>

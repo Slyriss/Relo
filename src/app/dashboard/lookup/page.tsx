@@ -2,7 +2,22 @@
 
 import { FormEvent } from "react";
 import Link from "next/link";
-import { BrainCircuit, ExternalLink, FileSearch, Globe2, Linkedin, Loader2, Newspaper, Search, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  BrainCircuit,
+  ExternalLink,
+  FileSearch,
+  Globe2,
+  Handshake,
+  Linkedin,
+  Loader2,
+  MessageSquare,
+  Newspaper,
+  Search,
+  Send,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,6 +95,7 @@ export default function LookupPage() {
   }
 
   const linkedInSource = result?.sources.find((source) => source.type === "linkedin" && source.verified);
+  const actionPlan = result?.researchBrief.actionPlan;
 
   return (
     <div className="space-y-6">
@@ -199,6 +215,80 @@ export default function LookupPage() {
                     </div>
                     <p className="mt-3 text-sm leading-6">{result.researchBrief.summary}</p>
                   </div>
+
+                  {actionPlan ? (
+                    <div className="rounded-xl border bg-background p-4 shadow-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <h2 className="text-sm font-semibold">Action plan</h2>
+                        <Badge className="bg-emerald-50 text-emerald-700">Use in the room</Badge>
+                      </div>
+                      <div className="mt-4 grid gap-3">
+                        <div className="rounded-lg border bg-muted/25 p-3">
+                          <p className="text-xs font-medium uppercase text-muted-foreground">Approach</p>
+                          <p className="mt-1 text-sm leading-6">{actionPlan.approach}</p>
+                        </div>
+                        <div className="rounded-lg border border-emerald-500/20 bg-emerald-50/70 p-3">
+                          <div className="flex items-center gap-2">
+                            <MessageSquare className="h-4 w-4 text-emerald-700" />
+                            <p className="text-xs font-medium uppercase text-emerald-800">Opening line</p>
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-emerald-950">{actionPlan.opener}</p>
+                        </div>
+                        <div className="grid gap-3 lg:grid-cols-2">
+                          <div className="rounded-lg border p-3">
+                            <p className="text-xs font-medium uppercase text-muted-foreground">Talking points</p>
+                            <ul className="mt-2 space-y-2 text-sm leading-6">
+                              {actionPlan.talkingPoints.map((item) => (
+                                <li key={item} className="flex gap-2">
+                                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div className="rounded-lg border p-3">
+                            <p className="text-xs font-medium uppercase text-muted-foreground">Questions to ask</p>
+                            <ul className="mt-2 space-y-2 text-sm leading-6">
+                              {actionPlan.questions.map((item) => (
+                                <li key={item} className="flex gap-2">
+                                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                        <div className="grid gap-3 lg:grid-cols-2">
+                          <div className="rounded-lg border p-3">
+                            <div className="flex items-center gap-2">
+                              <Handshake className="h-4 w-4 text-primary" />
+                              <p className="text-xs font-medium uppercase text-muted-foreground">Useful offer</p>
+                            </div>
+                            <p className="mt-2 text-sm leading-6">{actionPlan.offer}</p>
+                          </div>
+                          <div className="rounded-lg border p-3">
+                            <div className="flex items-center gap-2">
+                              <Send className="h-4 w-4 text-primary" />
+                              <p className="text-xs font-medium uppercase text-muted-foreground">Follow-up</p>
+                            </div>
+                            <p className="mt-2 text-sm leading-6">{actionPlan.followUp}</p>
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-amber-500/25 bg-amber-50 p-3">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-700" />
+                            <p className="text-xs font-medium uppercase text-amber-800">Avoid</p>
+                          </div>
+                          <ul className="mt-2 space-y-1 text-sm leading-6 text-amber-950">
+                            {actionPlan.avoid.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="grid gap-3 md:grid-cols-3">
                     <div className="rounded-lg border p-3">

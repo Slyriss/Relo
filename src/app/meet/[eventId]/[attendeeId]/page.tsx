@@ -3,9 +3,12 @@
 import { use } from "react";
 import { ParticipantRouteGuard } from "@/components/participant-route-guard";
 import { ScanPanel } from "@/components/scan-panel";
+import { useEvent } from "@/lib/store";
 
 export default function MeetPage({ params }: { params: Promise<{ eventId: string; attendeeId: string }> }) {
   const { eventId, attendeeId } = use(params);
+  const event = useEvent(eventId);
+  const resolvedEventId = event?.id ?? eventId;
 
   return (
     <ParticipantRouteGuard eventId={eventId}>
@@ -14,7 +17,7 @@ export default function MeetPage({ params }: { params: Promise<{ eventId: string
           <h1 className="text-3xl font-semibold tracking-normal">Confirm meeting</h1>
           <p className="mt-1 text-muted-foreground">This QR badge is ready to log as a real-world conversation.</p>
         </div>
-        <ScanPanel eventId={eventId} scannedAttendeeId={attendeeId} />
+        <ScanPanel eventId={resolvedEventId} scannedAttendeeId={attendeeId} />
       </main>
     </ParticipantRouteGuard>
   );

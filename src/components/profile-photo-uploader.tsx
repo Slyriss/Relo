@@ -51,7 +51,7 @@ export function ProfilePhotoUploader({ ownerId }: { ownerId: string }) {
 
   return (
     <div className="space-y-3 rounded-lg border bg-muted/25 p-3">
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <Input
           ref={inputRef}
           type="file"
@@ -61,9 +61,9 @@ export function ProfilePhotoUploader({ ownerId }: { ownerId: string }) {
             setStatus("idle");
             setMessage("");
           }}
-          className="file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm file:font-medium"
+          className="min-w-0 max-w-full overflow-hidden file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm file:font-medium"
         />
-        <Button type="button" onClick={upload} disabled={status === "saving" || !fileName}>
+        <Button type="button" onClick={upload} disabled={status === "saving" || !fileName} className="w-full sm:w-auto">
           {status === "saving" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageUp className="h-4 w-4" />}
           Upload
         </Button>
